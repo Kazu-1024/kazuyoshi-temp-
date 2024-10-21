@@ -57,6 +57,5 @@ func MatchmakingHandler(db *sql.DB) http.HandlerFunc {
 
 func generateRoomID() string {
 	// ユニークな部屋IDを生成する実装
-	// この例では簡単のため、現在時刻のUnixタイムスタンプを使用
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
