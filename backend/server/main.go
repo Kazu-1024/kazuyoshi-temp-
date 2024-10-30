@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sys3/api/account"
 	"sys3/api/matchmaking"
+	"sys3/api/question"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -34,6 +35,7 @@ func main() {
 	r.HandleFunc("/logout", account.LogoutHandler()).Methods("POST")
 	r.HandleFunc("/getusername", account.GetUsernameHandler(db)).Methods("GET")
 	r.HandleFunc("/matchmaking", matchmaking.MatchmakingHandler(db)).Methods("POST")
+	r.HandleFunc("/questions", question.MakeQuestionHandler(db)).Methods("POST")
 
 	// サーバーの設定
 	port := ":8080"
