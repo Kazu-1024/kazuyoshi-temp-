@@ -72,10 +72,7 @@ func RespondToFriendRequestHandler(db *sql.DB) http.HandlerFunc {
 		}
 		username := cookie.Value
 
-		var request struct {
-			RequestID int    `json:"request_id"`
-			Action    string `json:"action"` // "accept" or "reject"に応じてステータスを更新
-		}
+		var request Request
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			http.Error(w, "無効なリクエストデータです", http.StatusBadRequest)
 			return

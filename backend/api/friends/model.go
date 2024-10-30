@@ -11,3 +11,8 @@ type FriendResponse struct {
 	Message string `json:"message"`
 	Status  string `json:"status"`
 }
+
+type Request struct {
+	RequestID int    `json:"request_id"`
+	Action    string `json:"action"` // "accept" or "reject"に応じてステータスを更新
+}
