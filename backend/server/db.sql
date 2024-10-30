@@ -7,10 +7,11 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS friends(
+CREATE TABLE IF NOT EXISTS friends (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
-    friend_username VARCHAR(255) NOT NULL   
+    friend_username VARCHAR(255) NOT NULL,
+    UNIQUE KEY unique_friendship (username, friend_username)
 );
 
 CREATE TABLE IF NOT EXISTS questions (
@@ -24,4 +25,14 @@ CREATE TABLE IF NOT EXISTS questions (
     choice4 VARCHAR(255) NOT NULL,
     explanation TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS friend_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    friend_username VARCHAR(255) NOT NULL,
+    status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_request (username, friend_username)
 );

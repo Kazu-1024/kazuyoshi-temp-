@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sys3/api/account"
+	"sys3/api/friends"
 	"sys3/api/matchmaking"
 	"sys3/api/question"
 
@@ -36,6 +37,9 @@ func main() {
 	r.HandleFunc("/getusername", account.GetUsernameHandler(db)).Methods("GET")
 	r.HandleFunc("/matchmaking", matchmaking.MatchmakingHandler(db)).Methods("POST")
 	r.HandleFunc("/questions", question.MakeQuestionHandler(db)).Methods("POST")
+	r.HandleFunc("/friends/request", friends.SendFriendRequestHandler(db)).Methods("POST")
+	r.HandleFunc("/friends/respond", friends.RespondToFriendRequestHandler(db)).Methods("POST")
+	r.HandleFunc("/friends/pending", friends.GetPendingRequestsHandler(db)).Methods("GET")
 
 	// サーバーの設定
 	port := ":8080"
