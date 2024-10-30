@@ -12,3 +12,16 @@ CREATE TABLE IF NOT EXISTS friends(
     username VARCHAR(255) NOT NULL,
     friend_username VARCHAR(255) NOT NULL   
 );
+
+CREATE TABLE IF NOT EXISTS questions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    creator_username VARCHAR(255) NOT NULL,
+    question_text TEXT NOT NULL,
+    correct_answer VARCHAR(255) NOT NULL,
+    choice1 VARCHAR(255) NOT NULL,
+    choice2 VARCHAR(255) NOT NULL,
+    choice3 VARCHAR(255) NOT NULL,
+    choice4 VARCHAR(255) NOT NULL,
+    explanation TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
