@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS friends(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULl 
-)
+    username VARCHAR(255) NOT NULL,
+    friend_username VARCHAR(255) NOT NULL   
+);
