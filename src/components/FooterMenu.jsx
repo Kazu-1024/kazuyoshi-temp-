@@ -8,13 +8,13 @@ const FooterMenu = () => {
       navigate('/');
     }
   return (
-      <footer className="bg-cyan-400 absolute bottom-0 flex justify-around w-full py-5">
-        <button className="border-4" onClick={() => navigate('/CreateQuestions')}>createQ</button>
-        <button className="border-4" onClick={() => navigate('/Rankings')}>Ranking</button>
-        <button className="border-4" onClick={handleGoHome}>Home</button>
-        <button className="border-4" onClick={() => navigate('/Rankings')}>Ranking</button>
-        <button className="border-4" onClick={() => navigate('/UserDetails')}>User</button>
-      </footer>
+    <>
+      <button className="border-4" onClick={() => navigate('/CreateQuestions')}>作問</button>
+      <button className="border-4" onClick={() => navigate('/QuizReview')}>復習</button>
+      <button className="border-4" onClick={handleGoHome}>ホーム</button>
+      <button className="border-4" onClick={() => navigate('/Rankings')}>ランキング</button>
+      <button className="border-4" onClick={() => navigate('/UserDetails')}>ユーザー</button>
+    </>
   )
 }
 
