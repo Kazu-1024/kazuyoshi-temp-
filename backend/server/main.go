@@ -42,6 +42,7 @@ func main() {
 	r.HandleFunc("/friends/respond", friends.RespondToFriendRequestHandler(db)).Methods("POST")
 	r.HandleFunc("/friends/pending", friends.GetPendingRequestsHandler(db)).Methods("GET")
 	r.HandleFunc("/rate/calculate", rate.CalculateRatingHandler(db)).Methods("POST")
+	r.HandleFunc("/rate/top", rate.GetTopPlayersHandler(db)).Methods("GET")
 
 	// サーバーの設定
 	port := ":8080"

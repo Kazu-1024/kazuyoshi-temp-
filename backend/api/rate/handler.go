@@ -88,3 +88,38 @@ func updatePlayerRatings(db *sql.DB, winnerID string, winnerNewRating int, loser
 
 	return tx.Commit()
 }
+
+// レーティング上位10人のプレイヤーを返すハンドラー
+func GetTopPlayersHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 上位10人のプレイヤーを取得
+		rows, err := db.Query(`
+			SELECT username, rating 
+			FROM player_ratings 
+			ORDER BY rating DESC 
+			LIMIT 10
+		`)
+		if err != nil {
+			http.Error(w, "ランキングの取得に失敗しました", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		// 結果を格納するスライス
+		var topPlayers []PlayerRating
+
+		// 結果を処理
+		for rows.Next() {
+			var player PlayerRating
+			if err := rows.Scan(&player.Username, &player.Rating); err != nil {
+				http.Error(w, "データの読み取りに失敗しました", http.StatusInternalServerError)
+				return
+			}
+			topPlayers = append(topPlayers, player)
+		}
+
+		// レスポンスを返す
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(topPlayers)
+	}
+}
