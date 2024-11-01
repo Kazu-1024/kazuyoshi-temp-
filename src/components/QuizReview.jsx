@@ -2,7 +2,9 @@ import React from 'react'
 
 const QuizReview = () => {
   return (
-    <div>QuizReview</div>
+    <>
+        <h1>復習</h1>
+    </>
   )
 }
 
