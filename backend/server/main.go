@@ -25,15 +25,18 @@ func main() {
 	defer db.Close()
 
 	// MySQLに接続したときのメッセージを表示
-	fmt.Println("MySQLデータベースに正常に接続しました")
+	fmt.Println("データベースに接続しました")
 
 	// ルーターの初期化
 	r := mux.NewRouter()
 
+	// CORSミドルウェア
+	r.Use(corsMiddleware)
+
 	// ルートの設定
-	r.HandleFunc("/", homeHandler).Methods("GET")
-	r.HandleFunc("/signup", account.SignUpHandler(db)).Methods("POST")
-	r.HandleFunc("/login", account.LoginHandler(db)).Methods("POST")
+	r.HandleFunc("/", homeHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/signup", account.SignUpHandler(db)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/login", account.LoginHandler(db)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/logout", account.LogoutHandler()).Methods("POST")
 	r.HandleFunc("/getusername", account.GetUsernameHandler(db)).Methods("GET")
 	r.HandleFunc("/matchmaking", matchmaking.MatchmakingHandler(db)).Methods("POST")
@@ -52,4 +55,23 @@ func main() {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "tihs is the go api server for sys3")
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// すべてのレスポンスヘッダーにCORS設定を追加
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Max-Age", "3600")
+
+		// プリフライトリクエストの処理
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

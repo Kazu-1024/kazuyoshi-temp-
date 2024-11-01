@@ -41,8 +41,9 @@ func SignUpHandler(db *sql.DB) http.HandlerFunc {
 // ログインハンドラ
 func LoginHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// ログインのロジックをここに追加
-		// JSONデータをデコード
+		// Content-Typeの設定
+		w.Header().Set("Content-Type", "application/json")
+
 		var account Account
 		err := json.NewDecoder(r.Body).Decode(&account)
 		if err != nil {
@@ -71,15 +72,22 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 
 		// クッキーを設定
 		cookie := &http.Cookie{
-			Name:   "username",
-			Value:  account.Username,
-			Path:   "/",
-			MaxAge: 86400, // 24時間の有効期限（秒単位）
+			Name:     "username",
+			Value:    account.Username,
+			Path:     "/",
+			MaxAge:   86400, // 24時間
+			HttpOnly: true,
+			Secure:   false, // 開発環境ではfalse、本番環境ではtrueに
+			SameSite: http.SameSiteLaxMode,
 		}
 		http.SetCookie(w, cookie)
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ログインに成功しました"))
+		// 成功レスポンスを返す
+		response := map[string]string{
+			"message":  "ログインに成功しました",
+			"username": account.Username,
+		}
+		json.NewEncoder(w).Encode(response)
 	}
 }
 
