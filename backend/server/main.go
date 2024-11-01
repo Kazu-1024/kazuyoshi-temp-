@@ -9,6 +9,7 @@ import (
 	"sys3/api/friends"
 	"sys3/api/matchmaking"
 	"sys3/api/question"
+	"sys3/api/rate"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -40,6 +41,8 @@ func main() {
 	r.HandleFunc("/friends/request", friends.SendFriendRequestHandler(db)).Methods("POST")
 	r.HandleFunc("/friends/respond", friends.RespondToFriendRequestHandler(db)).Methods("POST")
 	r.HandleFunc("/friends/pending", friends.GetPendingRequestsHandler(db)).Methods("GET")
+	r.HandleFunc("/rate/calculate", rate.CalculateRatingHandler(db)).Methods("POST")
+	r.HandleFunc("/rate/top", rate.GetTopPlayersHandler(db)).Methods("GET")
 
 	// サーバーの設定
 	port := ":8080"
