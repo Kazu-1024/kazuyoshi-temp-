@@ -16,3 +16,10 @@ type PlayerRating struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
 }
+
+type Question struct {
+	ID            int      `json:"id"`
+	QuestionText  string   `json:"question_text"`
+	CorrectAnswer string   `json:"correct_answer"`
+	Choices       []string `json:"choices"`
+}

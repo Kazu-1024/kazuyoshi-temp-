@@ -31,3 +31,10 @@ type GameState struct {
 	StartTime time.Time
 	Status    string // "waiting", "matched", "playing", "finished" など
 }
+
+type Question struct {
+	ID            int       `json:"id"`
+	QuestionText  string    `json:"question_text"`
+	CorrectAnswer string    `json:"correct_answer"`
+	Choices       [4]string `json:"choices"`
+}
