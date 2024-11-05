@@ -52,3 +52,55 @@ func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
 		})
 	}
 }
+
+// とりあえずいったん全ての問題を取得するハンドラー
+func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// レスポンスヘッダーの設定
+		w.Header().Set("Content-Type", "application/json")
+
+		// データベースから問題を取得
+		rows, err := db.Query(`
+			SELECT id, creator_username, question_text, correct_answer, 
+			       choice1, choice2, choice3, choice4, explanation 
+			FROM questions`)
+		if err != nil {
+			http.Error(w, "問題の取得に失敗しました", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		// 問題のスライスを作成
+		var questions []Question
+		for rows.Next() {
+			var q Question
+			var choices [4]string
+			err := rows.Scan(
+				&q.ID,
+				&q.CreatorUsername,
+				&q.QuestionText,
+				&q.CorrectAnswer,
+				&choices[0],
+				&choices[1],
+				&choices[2],
+				&choices[3],
+				&q.Explanation,
+			)
+			if err != nil {
+				http.Error(w, "データの読み取りに失敗しました", http.StatusInternalServerError)
+				return
+			}
+			q.Choices = choices[:]
+			questions = append(questions, q)
+		}
+
+		// エラーチェック
+		if err = rows.Err(); err != nil {
+			http.Error(w, "データの読み取り中にエラーが発生しました", http.StatusInternalServerError)
+			return
+		}
+
+		// 結果をJSONで返す
+		json.NewEncoder(w).Encode(questions)
+	}
+}
