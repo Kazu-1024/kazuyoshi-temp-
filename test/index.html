@@ -26,7 +26,6 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            console.log('Login attempt for user:', username);
 
             try {
                 const response = await fetch('http://localhost:8080/login', {
@@ -39,8 +38,6 @@
                     mode: 'cors'
                 });
 
-                console.log('Response cookies:', document.cookie);
-                console.log('All headers:', response.headers);
 
                 if (response.ok) {
                     const data = await response.json();
