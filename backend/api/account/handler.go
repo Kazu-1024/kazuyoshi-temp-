@@ -3,6 +3,7 @@ package account
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -41,19 +42,17 @@ func SignUpHandler(db *sql.DB) http.HandlerFunc {
 // ログインハンドラ
 func LoginHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Content-Typeの設定
-		w.Header().Set("Content-Type", "application/json")
+		fmt.Printf("Login request received from origin: %s\n", r.Header.Get("Origin"))
 
 		var account Account
-		err := json.NewDecoder(r.Body).Decode(&account)
-		if err != nil {
-			http.Error(w, "無効なJSONデータです", http.StatusBadRequest)
+		if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
 
 		// データベースからユーザーを取得
 		var storedPassword string
-		err = db.QueryRow("SELECT password FROM users WHERE username = ?", account.Username).Scan(&storedPassword)
+		err := db.QueryRow("SELECT password FROM users WHERE username = ?", account.Username).Scan(&storedPassword)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, "ユーザーが見つかりません", http.StatusUnauthorized)
@@ -70,25 +69,30 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// クッキーを設定
+		// クッキーの設定を修正
 		cookie := &http.Cookie{
 			Name:     "username",
 			Value:    account.Username,
 			Path:     "/",
-			MaxAge:   86400, // 24時間
-			HttpOnly: true,
-			Secure:   false, // 開発環境ではfalse、本番環境ではtrueに
+			MaxAge:   86400,
+			HttpOnly: false, // JavaScriptからアクセス可能に
+			Secure:   false, // 開発環境ではfalse
 			SameSite: http.SameSiteLaxMode,
 		}
 		http.SetCookie(w, cookie)
 
-		// 成功レスポンスを返す
-		response := map[string]string{
+		// デバッグ用のログ
+		fmt.Printf("Setting cookie: %+v\n", cookie)
+		fmt.Printf("Response headers after setting cookie: %+v\n", w.Header())
+
+		// レスポンスを返す前にContent-Typeを設定
+		w.Header().Set("Content-Type", "application/json")
+
+		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":   "success",
 			"message":  "ログインに成功しました",
 			"username": account.Username,
-		}
-		json.NewEncoder(w).Encode(response)
+		})
 	}
 }
 
