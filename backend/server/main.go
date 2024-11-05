@@ -30,8 +30,23 @@ func main() {
 	// ルーターの初期化
 	r := mux.NewRouter()
 
+	// デバッグ用のログミドルウェアを追加
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Printf("受信リクエスト: %s %s\n", r.Method, r.URL.Path)
+			fmt.Printf("ヘッダー: %+v\n", r.Header)
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	// CORSミドルウェア
 	r.Use(corsMiddleware)
+
+	// WebSocketエンドポイント
+	r.HandleFunc("/matchmaking", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("マッチメイキングエンドポイントヒット")
+		matchmaking.MatchmakingHandler(w, r)
+	})
 
 	// ルートの設定
 	r.HandleFunc("/", homeHandler).Methods("GET", "OPTIONS")
@@ -39,7 +54,6 @@ func main() {
 	r.HandleFunc("/login", account.LoginHandler(db)).Methods("POST", "OPTIONS")
 	r.HandleFunc("/logout", account.LogoutHandler()).Methods("POST")
 	r.HandleFunc("/getusername", account.GetUsernameHandler(db)).Methods("GET")
-	r.HandleFunc("/matchmaking", matchmaking.MatchmakingHandler(db)).Methods("POST")
 	r.HandleFunc("/postquestions", question.MakeQuestionHandler(db)).Methods("POST")
 	r.HandleFunc("/getquestions", question.GetQuestionHandler(db)).Methods("GET")
 	r.HandleFunc("/friends/request", friends.SendFriendRequestHandler(db)).Methods("POST")
@@ -60,28 +74,22 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 許可するオリジンのリスト
-		allowedOrigins := map[string]bool{
-			"http://localhost:3000": true,
-			"http://localhost:5050": true,
-			"http://127.0.0.1:5500": true, // テスト用のオリジンを追加
-		}
-
-		// リクエストのオリジンを取得
 		origin := r.Header.Get("Origin")
 
-		// オリジンが許可リストに含まれているか確認
-		if allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+		allowedOrigins := map[string]bool{
+			"http://127.0.0.1:5500": true,
+			"http://localhost:5500": true,
+			"http://localhost:3000": true,
 		}
 
-		// その他のCORS設定
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Max-Age", "3600")
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+			w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+		}
 
-		// プリフライトリクエストの処理
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
