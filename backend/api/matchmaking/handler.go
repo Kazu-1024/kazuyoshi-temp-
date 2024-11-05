@@ -34,9 +34,6 @@ var (
 
 // WebSocketを使用したマッチメイキングハンドラー
 func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("MatchmakingHandler called with method: %s\n", r.Method)
-	fmt.Printf("Headers: %+v\n", r.Header)
-	fmt.Printf("All Cookies: %+v\n", r.Cookies())
 
 	// WebSocket接続のアップグレード
 	conn, err := upgrader.Upgrade(w, r, nil)
