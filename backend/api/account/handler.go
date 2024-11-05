@@ -84,6 +84,7 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 
 		// 成功レスポンスを返す
 		response := map[string]string{
+			"status":   "success",
 			"message":  "ログインに成功しました",
 			"username": account.Username,
 		}

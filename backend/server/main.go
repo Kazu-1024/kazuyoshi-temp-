@@ -60,8 +60,22 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// すべてのレスポンスヘッダーにCORS設定を追加
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		// 許可するオリジンのリスト
+		allowedOrigins := map[string]bool{
+			"http://localhost:3000": true,
+			"http://localhost:5050": true,
+			"http://127.0.0.1:5500": true, // テスト用のオリジンを追加
+		}
+
+		// リクエストのオリジンを取得
+		origin := r.Header.Get("Origin")
+
+		// オリジンが許可リストに含まれているか確認
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+
+		// その他のCORS設定
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

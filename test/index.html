@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>テスト</title>
+</head>
+<body>
+    <div>
+        <h1>ログイン</h1>
+        <input type="text" id="username" placeholder="ユーザー名">
+        <input type="password" id="password" placeholder="パスワード">
+        <button onclick="login()">ログイン</button>
+    </div>
+    
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                alert('ユーザー名とパスワードを入力してください');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    }),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('ログインに失敗しました');
+                }
+
+                const data = await response.json();
+                if (data.status === "success") {
+                    alert('ログインしました');
+                } else {
+                    alert('ログインに失敗しました');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('エラーが発生しました');
+            }
+        }
+    </script>
+</body>
+</html>
