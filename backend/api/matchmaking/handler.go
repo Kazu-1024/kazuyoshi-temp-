@@ -14,18 +14,7 @@ var (
 	roomsMutex sync.Mutex
 	upgrader   = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
-			origin := r.Header.Get("Origin")
-			fmt.Printf("Checking origin: %s\n", origin)
-
-			allowedOrigins := map[string]bool{
-				"http://127.0.0.1:5500": true,
-				"http://localhost:5500": true,
-				"http://localhost:3000": true,
-			}
-
-			isAllowed := allowedOrigins[origin]
-			fmt.Printf("Origin %s is allowed: %v\n", origin, isAllowed)
-			return isAllowed
+			return true // 全てのオリジンを許可
 		},
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,

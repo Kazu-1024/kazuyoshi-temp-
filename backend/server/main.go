@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// データベース接続の初期化
-	connStr := "root:root@tcp(localhost:3306)/sys3"
+	connStr := "root:114514z4Z@tcp(localhost:3306)/sys3"
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -74,21 +74,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-
-		allowedOrigins := map[string]bool{
-			"http://127.0.0.1:5500": true,
-			"http://localhost:5500": true,
-			"http://localhost:3000": true,
-		}
-
-		if allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-			w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-		}
+		// 全てのオリジンを許可
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
