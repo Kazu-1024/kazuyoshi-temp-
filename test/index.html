@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>テスト</title>
 </head>
+
 <body>
     <div>
         <h1>ログイン</h1>
@@ -11,17 +13,20 @@
         <input type="password" id="password" placeholder="パスワード">
         <button onclick="login()">ログイン</button>
     </div>
-    
+    <div>
+        <h1>マッチング</h1>
+        <button onclick="startMatchmaking()">マッチング開始</button>
+    </div>
+
 
     <script>
+        let ws; // WebSocket接続を保持する変数
+
         async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            
-            if (!username || !password) {
-                alert('ユーザー名とパスワードを入力してください');
-                return;
-            }
+
+            console.log('Login attempt for user:', username);
 
             try {
                 const response = await fetch('http://localhost:8080/login', {
@@ -29,29 +34,71 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    }),
-                    credentials: 'include'
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
                 });
 
-                if (!response.ok) {
-                    throw new Error('ログインに失敗しました');
-                }
+                console.log('Response cookies:', document.cookie);
+                console.log('All headers:', response.headers);
 
-                const data = await response.json();
-                if (data.status === "success") {
-                    alert('ログインしました');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('ログイン成功:', data);
                 } else {
-                    alert('ログインに失敗しました');
+                    console.error('ログイン失敗');
                 }
-
             } catch (error) {
-                console.error('Error:', error);
-                alert('エラーが発生しました');
+                console.error('エラー:', error);
             }
+        }
+
+        function startMatchmaking() {
+            console.log('マッチメイキング開始...');
+
+            // WebSocketのオプションを設定
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.hostname}:8080/matchmaking`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function () {
+                console.log('WebSocket接続が確立されました');
+            };
+
+            ws.onmessage = function (event) {
+                console.log('受信したメッセージ:', event.data);
+                const data = JSON.parse(event.data);
+
+                switch (data.status) {
+                    case 'waiting':
+                        console.log('マッチング待機中...');
+                        break;
+                    case 'matched':
+                        alert('マッチングが成立しました！');
+                        console.log('ルームID:', data.room_id);
+                        break;
+                    case 'timeout':
+                        alert('マッチングがタイムアウトしました。');
+                        ws.close();
+                        break;
+                }
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket接続エラーの詳細:', error);
+                console.error('WebSocket状態:', ws.readyState);
+                console.error('WebSocket URL:', ws.url);
+            };
+
+            ws.onclose = function (event) {
+                console.log('WebSocket接続が閉じられました');
+                console.log('Close code:', event.code);
+                console.log('Close reason:', event.reason);
+                console.log('Clean close:', event.wasClean);
+            };
         }
     </script>
 </body>
+
 </html>
