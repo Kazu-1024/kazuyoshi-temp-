@@ -67,7 +67,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if matchedRoom != nil {
-		// マッチング成功
+		// 既存の部屋とマッチングが成功した場合の処理
 		roomsMutex.Unlock()
 
 		// 両プレイヤーにマッチング成功を通知
@@ -79,12 +79,12 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
 
-		// マッチング後の処理（ゲーム開始など）
+		// マッチング成功後、直接ゲームセッションを開始
 		handleGameSession(matchedRoom)
 		return
 	}
 
-	// 新しい部屋を作成
+	// マッチする部屋が見つからなかった場合、新しい部屋を作成
 	newRoom := &Room{
 		ID:          generateRoomID(),
 		PlayerID:    cookie.Value,
@@ -101,8 +101,11 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		"room_id": newRoom.ID,
 	})
 
-	// 待機中の処理
-	waitForMatch(newRoom)
+	// マッチングを待機し、成功した場合のみゲームセッションを開始
+	if waitForMatch(newRoom) {
+		handleGameSession(newRoom)
+	}
+	// マッチングがタイムアウトした場合は、この時点で処理が終了する
 }
 
 func generateRoomID() string {
@@ -300,24 +303,35 @@ func handlePlayerAnswer(room *Room, playerID string, correctAnswer string) bool 
 	}
 }
 
-func waitForMatch(room *Room) {
-	// タイムアウト処理やマッチング待機中の処理を実装
-	ticker := time.NewTicker(30 * time.Second)
+func waitForMatch(room *Room) bool {
+	// タイムアウト用のティッカーを設定（5秒後にタイムアウト）
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for {
+		// マッチングが成功した場合は即座にtrueを返して終了
+		if room.IsMatched {
+			return true
+		}
+
 		select {
 		case <-ticker.C:
-			// タイムアウト処理
+			// タイムアウト時の処理
 			roomsMutex.Lock()
 			if !room.IsMatched {
+				// マッチングが成立していない場合、部屋を削除してタイムアウトを通知
 				delete(rooms, room.ID)
 				room.Player1Conn.WriteJSON(map[string]string{
 					"status": "timeout",
 				})
+				roomsMutex.Unlock()
+				return false
 			}
 			roomsMutex.Unlock()
-			return
+		default:
+			// マッチング待機中は100ミリ秒ごとにチェック
+			// CPU使用率を抑えるためのスリープ
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
