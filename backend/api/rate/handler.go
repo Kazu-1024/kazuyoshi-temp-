@@ -123,3 +123,13 @@ func GetTopPlayersHandler(db *sql.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(topPlayers)
 	}
 }
+
+// GetPlayerRating プレイヤーのレートを取得する関数を公開
+func GetPlayerRating(db *sql.DB, username string) int {
+	return getPlayerRating(db, username)
+}
+
+// UpdatePlayerRatings レートを更新する関数を公開
+func UpdatePlayerRatings(db *sql.DB, winnerID string, winnerNewRating int, loserID string, loserNewRating int) error {
+	return updatePlayerRatings(db, winnerID, winnerNewRating, loserID, loserNewRating)
+}

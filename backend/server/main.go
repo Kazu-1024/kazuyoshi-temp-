@@ -17,15 +17,12 @@ import (
 
 func main() {
 	// データベース接続の初期化
-	connStr := "root:114514z4Z@tcp(localhost:3306)/sys3"
+	connStr := "root:root@tcp(localhost:3306)/sys3"
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
-	// MySQLに接続したときのメッセージを表示
-	fmt.Println("データベースに接続しました")
 
 	// ルーターの初期化
 	r := mux.NewRouter()

@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"sync"
+	"sys3/api/rate"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -80,7 +82,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		conn.WriteJSON(matchResponse)
 
 		// マッチング成功後、直接ゲームセッションを開始
-		handleGameSession(matchedRoom)
+		handleGameSession(matchedRoom, db)
 		return
 	}
 
@@ -101,9 +103,9 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		"room_id": newRoom.ID,
 	})
 
-	// マッチングを待機し、成功した場合のみゲームセッションを開始
+	// マッチングを待機
 	if waitForMatch(newRoom) {
-		handleGameSession(newRoom)
+		handleGameSession(newRoom, db)
 	}
 	// マッチングがタイムアウトした場合は、この時点で処理が終了する
 }
@@ -113,29 +115,34 @@ func generateRoomID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-func handleGameSession(room *Room) {
-	// ゲーム開始メッセージを送信
+func handleGameSession(room *Room, db *sql.DB) {
+	// ゲーム開始メッセージを一度だけ送信
 	startMessage := map[string]string{
 		"status":  "game_start",
 		"message": "対戦を開始します",
 	}
-	room.Player1Conn.WriteJSON(startMessage)
-	room.Player2Conn.WriteJSON(startMessage)
 
-	// データベース接続
-	db, err := sql.Open("mysql", "root:114514z4Z@tcp(localhost:3306)/sys3")
-	if err != nil {
-		log.Printf("データベース接続エラー: %v", err)
+	// エラーチェックを追加
+	if err := room.Player1Conn.WriteJSON(startMessage); err != nil {
+		log.Printf("Player1へのゲーム開始メッセージ送信エラー: %v", err)
 		return
 	}
-	defer db.Close()
+	if err := room.Player2Conn.WriteJSON(startMessage); err != nil {
+		log.Printf("Player2へのゲーム開始メッセージ送信エラー: %v", err)
+		return
+	}
+
+	// 確実にメッセージが届くまで待機
+	time.Sleep(1 * time.Second)
 
 	// スコアを管理
 	player1Score := 0
 	player2Score := 0
 
-	for {
-		// 問題をデータベースからランダムに取得
+	// 問題数を管理
+	const TOTAL_QUESTIONS = 5
+	for questionCount := 0; questionCount < TOTAL_QUESTIONS; questionCount++ {
+		// 問題取得と送信を同期的に処理
 		var question Question
 		err := db.QueryRow(`
 			SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
@@ -153,16 +160,27 @@ func handleGameSession(room *Room) {
 		)
 		if err != nil {
 			log.Printf("問題取得エラー: %v", err)
-			continue
+			return
 		}
 
-		// 両プレイヤーに問題を送信
+		// 問題を送信
 		questionMessage := map[string]interface{}{
 			"status":   "question",
 			"question": question,
 		}
-		room.Player1Conn.WriteJSON(questionMessage)
-		room.Player2Conn.WriteJSON(questionMessage)
+
+		// 両プレイヤーに順番に送信
+		if err := room.Player1Conn.WriteJSON(questionMessage); err != nil {
+			log.Printf("Player1への問題送信エラー: %v", err)
+			return
+		}
+		if err := room.Player2Conn.WriteJSON(questionMessage); err != nil {
+			log.Printf("Player2への問題送信エラー: %v", err)
+			return
+		}
+
+		// 問題送信後、少し待機
+		time.Sleep(1 * time.Second)
 
 		// 回答権管理用のチャネル
 		answerRights := make(chan string, 1)
@@ -219,6 +237,29 @@ func handleGameSession(room *Room) {
 		// 次の問題までの待機時間
 		time.Sleep(3 * time.Second)
 	}
+
+	// 最終結果の通知
+	finalResult := map[string]interface{}{
+		"status": "game_end",
+		"final_scores": map[string]interface{}{
+			"player1": map[string]interface{}{
+				"id":    room.PlayerID,
+				"score": player1Score,
+			},
+			"player2": map[string]interface{}{
+				"id":    room.Player2ID,
+				"score": player2Score,
+			},
+		},
+		"winner": determineWinner(room.PlayerID, room.Player2ID, player1Score, player2Score),
+	}
+
+	room.Player1Conn.WriteJSON(finalResult)
+	room.Player2Conn.WriteJSON(finalResult)
+
+	// レート計算と更新
+	updatePlayerRatings(db, finalResult["winner"].(map[string]string)["id"],
+		finalResult["winner"].(map[string]string)["loser_id"])
 }
 
 func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights chan<- string) {
@@ -241,7 +282,7 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 				// 他のプレイヤーが既に回答権を取得している
 				conn.WriteJSON(map[string]string{
 					"status":  "answer_denied",
-					"message": "他のプレイヤーが回答中です",
+					"message": "他のレイヤーが回答中です",
 				})
 			}
 		}
@@ -333,5 +374,58 @@ func waitForMatch(room *Room) bool {
 			// CPU使用率を抑えるためのスリープ
 			time.Sleep(100 * time.Millisecond)
 		}
+	}
+}
+
+// 勝者を決定する関数
+func determineWinner(player1ID, player2ID string, score1, score2 int) map[string]string {
+	if score1 > score2 {
+		return map[string]string{
+			"id":       player1ID,
+			"loser_id": player2ID,
+			"message":  "Player 1の勝利！",
+		}
+	} else if score2 > score1 {
+		return map[string]string{
+			"id":       player2ID,
+			"loser_id": player1ID,
+			"message":  "Player 2の勝利！",
+		}
+	}
+	return map[string]string{
+		"id":      "draw",
+		"message": "引き分け",
+	}
+}
+
+// レーティングを更新する関数
+func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
+	if winnerID == "draw" {
+		return // 引き分けの場合はレーティング更新なし
+	}
+
+	// レート更新のリクエストを作成
+	rateRequest := rate.RatingRequest{
+		WinnerID: winnerID,
+		LoserID:  loserID,
+		GameType: "quiz",
+	}
+
+	// 勝者と敗者の現在のレートを取得
+	winnerRating := rate.GetPlayerRating(db, rateRequest.WinnerID)
+	loserRating := rate.GetPlayerRating(db, rateRequest.LoserID)
+
+	// レート変動を計算
+	expectedScore := 1.0 / (1.0 + math.Pow(10, float64(loserRating-winnerRating)/400.0))
+	ratingChange := int(math.Round(rate.KFactor * (1.0 - expectedScore)))
+
+	winnerNewRating := winnerRating + ratingChange
+	loserNewRating := loserRating - ratingChange
+
+	// データベースを更新
+	err := rate.UpdatePlayerRatings(db, rateRequest.WinnerID, winnerNewRating, rateRequest.LoserID, loserNewRating)
+	if err != nil {
+		log.Printf("レート更新エラー: %v", err)
+		return
 	}
 }
