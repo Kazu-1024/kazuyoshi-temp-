@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       backgroundImage: {
-        'custom-background': "url('/build/images/BackGround.png')",
+        'custom-background': "url('../src/assets/images/BackGround.png')",
       },
       customShadow: {
         'shadowTop': "0 -4px 6px rgba(0, 0, 0, 0.1)",
