@@ -16,13 +16,16 @@ import Footer from './components/layout/Footer';
 function App() {
   const location = useLocation();
 
+  const hideHeaderPaths = ["/InGame", "/Login", "/Matching", "/Result"]
   const hideFooterPaths = ["/InGame", "/Login"];
   return (
       <>
         <div className="flex flex-col min-h-screen h-screen">
-          <header className="h-28 border-b-2 border-black flex items-center shadow-md">
-            <Header />
-          </header>
+          {!hideHeaderPaths.includes(location.pathname) && (
+            <header className="h-28 border-b-2 border-black flex items-center shadow-md">
+              <Header />
+            </header>
+          )}
           <main className="flex-1 bg-custom-background bg-no-repeat bg-center">
             <Routes>
               {/* ログイン */}
