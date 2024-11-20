@@ -23,7 +23,6 @@ func SendFriendRequestHandler(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "無効なリクエストデータです", http.StatusBadRequest)
 			return
 		}
-
 		// 自分自身にフレンド申請を送れないようにする
 		if username == request.FriendUsername {
 			http.Error(w, "自分自身にフレンド申請はできません", http.StatusBadRequest)

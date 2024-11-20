@@ -1,9 +1,12 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <>
-      <h1>マッチング開始aaaaaaaaaaa</h1>
+      <button className="border-4" onClick={() => navigate('/login')}>ログイン</button>
+      <button type="" onClick={() => navigate('/Matching')}>マッチング開始</button>
     </>
   )
 }
