@@ -18,7 +18,9 @@ import (
 func main() {
 	// データベース接続の初期化
 	connStr := "root:root@tcp(localhost:3306)/sys3"
-	db, err := sql.Open("mysql", connStr)
+	var db *sql.DB
+	var err error
+	db, err = sql.Open("mysql", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -23,6 +23,7 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	db *sql.DB
 )
 
 // WebSocketを使用したマッチメイキングハンドラー
