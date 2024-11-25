@@ -1,11 +1,13 @@
 package matchmaking
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
+	"net/http/httptest"
 	"sync"
 	"sys3/api/rate"
 	"time"
@@ -124,13 +126,22 @@ func generateRoomID() string {
 }
 
 func handleGameSession(room *Room) {
-	// ゲーム開始メッセージを一度だけ送信
+	// 出題済みの問題IDを管理
+	usedQuestionIDs := make(map[int]bool)
+
+	// 利用可能な問題の総数を取得
+	var totalQuestions int
+	err := db.QueryRow("SELECT COUNT(*) FROM questions").Scan(&totalQuestions)
+	if err != nil {
+		log.Printf("問題数取得エラー: %v", err)
+		return
+	}
+
+	// ゲーム開始メッセージを送信
 	startMessage := map[string]string{
 		"status":  "game_start",
 		"message": "対戦を開始します",
 	}
-
-	// エラーチェックを追加
 	if err := room.Player1Conn.WriteJSON(startMessage); err != nil {
 		log.Printf("Player1へのゲーム開始メッセージ送信エラー: %v", err)
 		return
@@ -140,35 +151,42 @@ func handleGameSession(room *Room) {
 		return
 	}
 
-	// 確実にメッセージが届くまで待機
-	time.Sleep(1 * time.Second)
-
 	// スコアを管理
 	player1Score := 0
 	player2Score := 0
 
-	// 問題数を管理
-	const TOTAL_QUESTIONS = 5
-	for questionCount := 0; questionCount < TOTAL_QUESTIONS; questionCount++ {
-		// 問題取得と送信を同期的に処理
+	// 問題数を管理（利用可能な問題数と5問のうち少ない方）
+	const number_of_questions = 5 // ここで問題数を指定できつ
+	questionsPerGame := min(number_of_questions, totalQuestions)
+
+	for questionCount := 0; questionCount < questionsPerGame; questionCount++ {
+		// まだ出題していない問題を取得
 		var question Question
-		err := db.QueryRow(`
-			SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
-			FROM questions 
-			ORDER BY RAND() 
-			LIMIT 1
-		`).Scan(
-			&question.ID,
-			&question.QuestionText,
-			&question.CorrectAnswer,
-			&question.Choices[0],
-			&question.Choices[1],
-			&question.Choices[2],
-			&question.Choices[3],
-		)
-		if err != nil {
-			log.Printf("問題取得エラー: %v", err)
-			return
+		for {
+			err := db.QueryRow(`
+				SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
+				FROM questions 
+				ORDER BY RAND() 
+				LIMIT 1
+			`).Scan(
+				&question.ID,
+				&question.QuestionText,
+				&question.CorrectAnswer,
+				&question.Choices[0],
+				&question.Choices[1],
+				&question.Choices[2],
+				&question.Choices[3],
+			)
+			if err != nil {
+				log.Printf("問題取得エラー: %v", err)
+				return
+			}
+
+			// 未出題の問題であれば使用
+			if !usedQuestionIDs[question.ID] {
+				usedQuestionIDs[question.ID] = true
+				break
+			}
 		}
 
 		// 問題を送信
@@ -208,10 +226,16 @@ func handleGameSession(room *Room) {
 				"message":   "回答権が獲得されました",
 				"player_id": playerID, // どのプレイヤーが回答権を得たか
 			}
-			room.Player1Conn.WriteJSON(rightsGrantedMessage)
-			room.Player2Conn.WriteJSON(rightsGrantedMessage)
 
-			// 回答権を得たプレイヤーに通知
+			// 両プレイヤーに通知を送信
+			if err := room.Player1Conn.WriteJSON(rightsGrantedMessage); err != nil {
+				log.Printf("Player1への回答権通知エラー: %v", err)
+			}
+			if err := room.Player2Conn.WriteJSON(rightsGrantedMessage); err != nil {
+				log.Printf("Player2への回答権通知エラー: %v", err)
+			}
+
+			// 回答権を得たプレイヤーの回答を待機
 			answered = handlePlayerAnswer(room, playerID, question.CorrectAnswer)
 
 			// スコアの更新
@@ -271,11 +295,21 @@ func handleGameSession(room *Room) {
 }
 
 func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights chan<- string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("handleAnswerRequest でパニック発生: %v", r)
+		}
+	}()
+
 	for {
 		var message map[string]interface{}
 		err := conn.ReadJSON(&message)
 		if err != nil {
-			log.Printf("メッセージ読み取りエラー: %v", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("予期せぬ接続切断: %v", err)
+			} else {
+				log.Printf("メッセージ読み取りエラー: %v", err)
+			}
 			return
 		}
 
@@ -285,13 +319,18 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 			select {
 			case answerRights <- playerID:
 				log.Printf("プレイヤー %s が回答権を獲得", playerID)
-				return // 回答権を得たら終了
+				// 回答権獲得の通知は handleGameSession で行うため、ここでは即座に return
+				return
 			default:
 				// 他のプレイヤーが既に回答権を取得している
-				conn.WriteJSON(map[string]string{
+				err := conn.WriteJSON(map[string]string{
 					"status":  "answer_denied",
-					"message": "他のレイヤーが回答中です",
+					"message": "他のプレイヤーが回答中です",
 				})
+				if err != nil {
+					log.Printf("回答権拒否メッセージ送信エラー: %v", err)
+					return
+				}
 			}
 		}
 	}
@@ -406,7 +445,7 @@ func determineWinner(player1ID, player2ID string, score1, score2 int) map[string
 	}
 }
 
-// レーティングを更新する関数
+// レート計算と更新
 func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 	if winnerID == "draw" {
 		return // 引き分けの場合はレーティング更新なし
@@ -419,21 +458,22 @@ func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 		GameType: "quiz",
 	}
 
-	// 勝者と敗者の現在のレートを取得
-	winnerRating := rate.GetPlayerRating(db, rateRequest.WinnerID)
-	loserRating := rate.GetPlayerRating(db, rateRequest.LoserID)
+	// レート計算ハンドラーを使用してレートを更新
+	handler := rate.CalculateRatingHandler(db)
 
-	// レート変動を計算
-	expectedScore := 1.0 / (1.0 + math.Pow(10, float64(loserRating-winnerRating)/400.0))
-	ratingChange := int(math.Round(rate.KFactor * (1.0 - expectedScore)))
+	// リクエストを作成
+	reqBody, _ := json.Marshal(rateRequest)
+	req, _ := http.NewRequest("POST", "/calculate-rating", bytes.NewBuffer(reqBody))
 
-	winnerNewRating := winnerRating + ratingChange
-	loserNewRating := loserRating - ratingChange
+	// レスポンスを受け取るためのRecorderを作成
+	w := httptest.NewRecorder()
 
-	// データベースを更新
-	err := rate.UpdatePlayerRatings(db, rateRequest.WinnerID, winnerNewRating, rateRequest.LoserID, loserNewRating)
-	if err != nil {
-		log.Printf("レート更新エラー: %v", err)
+	// ハンドラーを実行
+	handler.ServeHTTP(w, req)
+
+	// エラーチェック
+	if w.Code != http.StatusOK {
+		log.Printf("レート更新エラー: %v", w.Body.String())
 		return
 	}
 }
