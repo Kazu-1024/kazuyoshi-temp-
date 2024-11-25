@@ -82,8 +82,14 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
 
-		// マッチング成功後、直接ゲームセッションを開始
-		handleGameSession(matchedRoom, db)
+		// Player2の場合はゲームセッションを開始しない
+		if cookie.Value == matchedRoom.Player2ID {
+			// 接続を維持したまま待機
+			select {}
+		}
+
+		// Player1の場合のみゲームセッションを開始
+		handleGameSession(matchedRoom)
 		return
 	}
 
@@ -106,7 +112,8 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 
 	// マッチングを待機
 	if waitForMatch(newRoom) {
-		handleGameSession(newRoom, db)
+		// 部屋作成者（Player1）の場合のみゲームセッションを開始
+		handleGameSession(newRoom)
 	}
 	// マッチングがタイムアウトした場合は、この時点で処理が終了する
 }
@@ -116,7 +123,7 @@ func generateRoomID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-func handleGameSession(room *Room, db *sql.DB) {
+func handleGameSession(room *Room) {
 	// ゲーム開始メッセージを一度だけ送信
 	startMessage := map[string]string{
 		"status":  "game_start",
@@ -429,4 +436,9 @@ func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 		log.Printf("レート更新エラー: %v", err)
 		return
 	}
+}
+
+// InitDB データベース接続を初期化する
+func InitDB(database *sql.DB) {
+	db = database
 }
