@@ -11,6 +11,10 @@ module.exports = {
       customShadow: {
         'shadowTop': "0 -4px 6px rgba(0, 0, 0, 0.1)",
       },
+      hatchedBox:{
+        'hatchedBox':'linear-gradient(-25deg, pink 50%, skyblue 0);'
+
+      },
     },
   },
   plugins: [],
