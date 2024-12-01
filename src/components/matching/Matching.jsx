@@ -59,44 +59,50 @@ const Matching = () => {
   const backHomepage = () => {
     navigate(-1)
   }
+  //スライドコンテナの切れ端表示する処理
   //-------------------------------------------------------------------------
   return (
     <>
-      <div className="mt-28 flex justify-center" aria-label="読み込み中">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+      <div className="mt-16 flex justify-center" aria-label="読み込み中">
+        <div className="mr-28 animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+        <div className="ml-28 animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+
       </div>
       {/*セクション*/}
-      <div className='mt-16 flex justify-center '>
-        <img src={secHeader} alt="" className='w-11/12' />
+      <div className='mt-12 flex justify-center '>
+        <div className='pt-2 rounded-t-2xl  w-11/12 bg-gradient-to-r from-gray-400 to-black flex justify-center'>
+          <img src={secHeader} width="97%" height="90%" alt="" className='rounded-t-3xl w-15/16 ' />
+        </div>
       </div>
       {/*セクションの中身*/}
-      <div className=' flex justify-center '>
-        <div className='rounded-b-2xl w-11/12 h-48 bg-white border border-black'>
-          <div className='mt-8 w-64 mx-auto'>
-            <div className=" w-full mx-auto">
-              {/* スクロール可能なスライドコンテナ */}
-              {/* snap-x, snap-mandatoryでスナップスクロールを実現 */}
-              <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {/* スライドのマッピング */}
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex-none w-full h-28 snap-start ${item.color} flex items-center justify-center text-white text-2xl`}
-                  >
-                    Slide {item.id}
-                  </div>
-                ))}
-              </div>
-
-              {/* ドットインジケーターのコンテナ */}
-              <div className="flex justify-center gap-2 mt-4">
-                {/* インジケータードットのマッピング */}
-                {items.map((_, index) => (
-                  <button key={index}onClick={() => scrollToItem(index)}className={`w-3 h-3 rounded-full transition-all duration-300 ${activeIndex === index ? 'bg-blue-600 w-6' : 'bg-gray-300'}`} aria-label={`Scroll to slide ${index + 1}`}/>
-                ))}
+      <div className='flex justify-center '>
+        <div className='rounded-b-2xl shadow-2xl w-11/12 h-64 bg-gradient-to-r from-gray-400 to-black '>
+          <div className=' rounded-b-2xl w-15/16  h-60 bg-white m-2'>
+            <div className=' w-64 mx-auto'>
+              <div className=" w-full mx-auto">
+                {/* スクロール可能なスライドコンテナ */}
+                {/* snap-x, snap-mandatoryでスナップスクロールを実現 */}
+                <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {/* スライドのマッピング */}
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`mt-10 flex-none w-full h-36 snap-start ${item.color} flex items-center justify-center text-white text-2xl`}
+                    >
+                      Slide {item.id}
+                    </div>
+                  ))}
+                </div>
+                {/* ドットインジケーターのコンテナ */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {/* インジケータードットのマッピング */}
+                  {items.map((_, index) => (
+                    <button key={index}onClick={() => scrollToItem(index)}className={`w-3 h-3 rounded-full transition-all duration-300 ${activeIndex === index ? 'bg-blue-600 w-6' : 'bg-gray-300'}`} aria-label={`Scroll to slide ${index + 1}`}/>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+        </div>
         </div>
       </div>
 
