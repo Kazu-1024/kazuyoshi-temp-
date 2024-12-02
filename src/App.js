@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes, useLocation} from 'react-router
 import Login from './components/login/Login';
 import Home from './components/Home';
 import InGame from './components/inGame/InGame';
-import Result from './components/inGame/Result';
+import Result from './components/Result/Result';
 import Rankings from './components/Rankings';
 import QuizReview from "./components/QuizReview";
 import UserDetails from './components/UserDetails';
@@ -16,17 +16,17 @@ import Footer from './components/layout/Footer';
 function App() {
   const location = useLocation();
 
-  const hideHeaderPaths = ["/InGame", "/Login", "/Matching", "/Result"]
-  const hideFooterPaths = ["/InGame", "/Login"];
+  const hideHeaderPaths = ["/InGame", "/login", "/Matching", "/Result"]
+  const hideFooterPaths = ["/InGame", "/login", "/Matching", "/Result"];
   return (
       <>
         <div className="flex flex-col min-h-screen h-screen">
           {!hideHeaderPaths.includes(location.pathname) && (
-            <header className="h-28 border-b-2 border-black flex items-center shadow-md">
+            <header className="h-32 border-b-2 border-black flex items-center shadow-md">
               <Header />
             </header>
           )}
-          <main className="flex-1 bg-custom-background bg-no-repeat bg-center">
+          <main className="flex-1 bg-custom-background bg-no-repeat bg-center bg-gray-50">
             <Routes>
               {/* ログイン */}
               <Route path="/Login" element={<Login />} />
