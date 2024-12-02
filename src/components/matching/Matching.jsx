@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import secHeader from '../../assets/images/Group 83.png'
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import secHeader from "../../assets/images/Group_83.png";
+import cancelButton from "../../assets/images/cancel_button.png";
+import MTH from "../../assets/images/MTH.png";
+import RatingB from "../../assets/images/Frame_37.png";
 
 const Matching = () => {
   // アクティブなスライドのインデックスを管理するstate
@@ -8,14 +11,13 @@ const Matching = () => {
   // スクロール可能なコンテナへの参照を保持するref
   const scrollContainerRef = useRef(null);
 
-  // 表示するスライドのデータ配列
-  // 実際のアプリケーションではpropsとして渡すことが多い
-  const items = [
-    { id: 1, color: 'bg-red-500' },
-    { id: 2, color: 'bg-blue-500' },
-    { id: 3, color: 'bg-green-500' },
-    { id: 4, color: 'bg-yellow-500' },
-    { id: 5, color: 'bg-purple-500' }
+  // 表示するスライドのデータ配列-----------------------------
+  const cardText = [
+    { id: 1, text: "create" },
+    { id: 2, text: "read" },
+    { id: 3, text: "update" },
+    { id: 4, text: "delete" },
+    { id: 5, text: "start" },
   ];
 
   useEffect(() => {
@@ -36,9 +38,9 @@ const Matching = () => {
     // スクロールイベントリスナーの設定
     const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener('scroll', handleScroll);
+      container.addEventListener("scroll", handleScroll);
       // コンポーネントのアンマウント時にイベントリスナーを削除
-      return () => container.removeEventListener('scroll', handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
     }
   }, []); // 空の依存配列で初回マウント時のみ実行
 
@@ -49,7 +51,7 @@ const Matching = () => {
       // smooth指定で滑らかなスクロールを実現
       scrollContainerRef.current.scrollTo({
         left: itemWidth * index,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -57,64 +59,98 @@ const Matching = () => {
   const navigate = useNavigate();
 
   const backHomepage = () => {
-    navigate(-1)
-  }
+    navigate(-1);
+  };
   //スライドコンテナの切れ端表示する処理
   //-------------------------------------------------------------------------
   return (
     <>
       <div className="mt-16 flex justify-center" aria-label="読み込み中">
-        <div className="mr-28 animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-        <div className="ml-28 animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+        {/*自分のアイコン、ランク、レート表示 */}
+        <div className="mr-24">
+          <img src={MTH} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
+          <div className="flex">
+            <img src={RatingB} alt="" className=" rounded-full" />
+            <p>1314</p>
+          </div>
+        </div>
+        {/*相手ののアイコン、ランク、レート表示 */}
 
+        <div className="ml-24 animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+
+        
       </div>
-      {/*セクション*/}
-      <div className='mt-12 flex justify-center '>
-        <div className='pt-2 rounded-t-2xl  w-11/12 bg-gradient-to-r from-gray-400 to-black flex justify-center'>
-          <img src={secHeader} width="97%" height="90%" alt="" className='rounded-t-3xl w-15/16 ' />
+      {/*暗記カード*/}
+      <div className="mt-12 flex justify-center ">
+        <div className="pt-2 rounded-t-2xl  w-11/12 bg-gradient-to-r from-gray-400 to-black flex justify-center">
+          <img
+            src={secHeader}
+            width="97%"
+            height="90%"
+            alt=""
+            className="rounded-t-3xl w-15/16 "
+          />
         </div>
       </div>
-      {/*セクションの中身*/}
-      <div className='flex justify-center '>
-        <div className='rounded-b-2xl shadow-2xl w-11/12 h-64 bg-gradient-to-r from-gray-400 to-black '>
-          <div className=' rounded-b-2xl w-15/16  h-60 bg-white m-2'>
-            <div className=' w-64 mx-auto'>
-              <div className=" w-full mx-auto">
+
+      {/*暗記カードの中身*/}
+      <div className="flex justify-center ">
+        <div className="rounded-b-2xl shadow-2xl w-11/12 h-64 bg-gradient-to-r from-gray-400 to-black ">
+          <div className=" rounded-b-2xl w-15/16  h-60 bg-white m-2">
+            <div className=" w-64 mx-auto">
+              <div className="w-full mx-auto">
                 {/* スクロール可能なスライドコンテナ */}
                 {/* snap-x, snap-mandatoryでスナップスクロールを実現 */}
-                <div ref={scrollContainerRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div
+                  ref={scrollContainerRef}
+                  className="pb-0.5  flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
                   {/* スライドのマッピング */}
-                  {items.map((item) => (
+                  {cardText.map((item) => (
                     <div
                       key={item.id}
-                      className={`mt-10 flex-none w-full h-36 snap-start ${item.color} flex items-center justify-center text-white text-2xl`}
+                      className={`shadow-2xl mt-10 flex-none w-full h-36 snap-start bg-white flex items-center justify-center text-black text-2xl border border-black `}
                     >
-                      Slide {item.id}
+                      {item.text}
                     </div>
                   ))}
                 </div>
                 {/* ドットインジケーターのコンテナ */}
                 <div className="flex justify-center gap-2 mt-4">
                   {/* インジケータードットのマッピング */}
-                  {items.map((_, index) => (
-                    <button key={index}onClick={() => scrollToItem(index)}className={`w-3 h-3 rounded-full transition-all duration-300 ${activeIndex === index ? 'bg-blue-600 w-6' : 'bg-gray-300'}`} aria-label={`Scroll to slide ${index + 1}`}/>
+                  {cardText.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToItem(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${activeIndex === index
+                          ? "bg-blue-600 w-6"
+                          : "bg-gray-300"
+                        }`}
+                      aria-label={`Scroll to slide ${index + 1}`}
+                    />
                   ))}
                 </div>
               </div>
             </div>
-        </div>
+          </div>
         </div>
       </div>
 
-      <div className='flex justify-center mt-24'>
-        <h1 className='mx-auto'>マッチング待機中・・・</h1>
+      <div className="flex justify-center mt-32">
+        <h1 className="mx-auto text-gray-500">対戦相手を探してます...</h1>
       </div>
-      <div className='flex justify-center '>
-
-        <button onClick={backHomepage} className="mx-auto h-16 w-32 text-white border-4 rounded-3xl border-cyan-300 bg-black ">Cancel</button>
+      {/*キャンセルボタン */}
+      <div className="flex justify-center ">
+        <img
+          className="mx-auto h-16 w-56 text-white rounded-3xl  "
+          onClick={backHomepage}
+          src={cancelButton}
+          alt=""
+        />
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Matching
+export default Matching;
