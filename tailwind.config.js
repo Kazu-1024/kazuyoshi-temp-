@@ -21,6 +21,17 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  plugins: [
+  function({ addUtilities }) {
+    const newUtilities = {
+      '.border-gradient-gray-black': {
+        'border-image-source': 'linear-gradient(to right, gray 0%, black 100%)',
+        'border-image-slice': '1',
+        'border-width': '4px',
+        'border-style': 'solid',
+      }
+    }
+    addUtilities(newUtilities)
+  }],
 }
 
