@@ -26,6 +26,14 @@ func main() {
 	}
 	defer db.Close()
 
+	// データベース接続のテスト
+	if err = db.Ping(); err != nil {
+		log.Fatal("データベース接続エラー:", err)
+	}
+
+	// データベース接続を初期化
+	matchmaking.InitDB(db)
+
 	// ルーターの初期化
 	r := mux.NewRouter()
 
