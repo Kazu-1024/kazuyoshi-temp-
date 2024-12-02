@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, useLocation} from 'react-router-dom';
 import Login from './components/login/Login';
+import Register from "./components/login/Register";
 import Home from './components/Home';
 import InGame from './components/inGame/InGame';
 import Result from './components/Result/Result';
@@ -8,6 +9,7 @@ import Rankings from './components/Rankings';
 import QuizReview from "./components/QuizReview";
 import UserDetails from './components/UserDetails';
 import Matching from "./components/matching/Matching";
+import MatchLoading from "./components/matching/MatchLoading";
 import CreateQuestions from "./components/CreateQuestions";
 import CreateQuestions_details from "./components/CreateQuestions_details";
 import Header from './components/layout/Header';
@@ -16,8 +18,8 @@ import Footer from './components/layout/Footer';
 function App() {
   const location = useLocation();
 
-  const hideHeaderPaths = ["/InGame", "/login", "/Matching", "/Result"]
-  const hideFooterPaths = ["/InGame", "/login", "/Matching", "/Result"];
+  const hideHeaderPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"]
+  const hideFooterPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"];
   return (
       <>
         <div className="flex flex-col min-h-screen h-screen">
@@ -30,6 +32,7 @@ function App() {
             <Routes>
               {/* ログイン */}
               <Route path="/Login" element={<Login />} />
+              <Route path="/Register" element={<Register />} />
               {/* ホーム */}
               <Route path="/QuizReview" element={<QuizReview />} />
               <Route path="/" element={<Home />} />
@@ -40,6 +43,7 @@ function App() {
               {/* 対戦 */}
               <Route path="/InGame" element={<InGame />} />
               <Route path="/Matching" element={<Matching />} />
+              <Route path="/MatchLoading" element={<MatchLoading />}/>
               <Route path="/Result" element={<Result />} />
             </Routes>
           </main>
