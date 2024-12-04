@@ -39,7 +39,7 @@ const Result = () => {
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
                   <p className="text-lg mr-2">{resultData.winner.name}</p>
-                  <div className="relative">
+                  <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgroud" className="block" />
                     <p className="absolute inset-0 left-4 flex items-center justify-center text-white font-jaro tracking-wider text-xl">
                       {resultData.winner.rate}
@@ -57,7 +57,12 @@ const Result = () => {
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
                   <p className="text-lg mr-2">{resultData.loser.name}</p>
-                  <p className="text-sm">{resultData.loser.rate}</p>
+                  <div className="relative w-1/3">
+                    <img src={ratingBg} alt="Rating Backgrond" className="block" />
+                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-[16px]">
+                      {resultData.loser.rate}
+                    </p>
+                  </div>
                 </div>
                 <div className="w-11/12 border-t border border-gray-300 mb-2 mx-auto" />
                 <p className="absolute top-0 left-16 w-8 text-center bg-white text-[10px] font-afacad tracking-wide">loser</p>
