@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import Luxon from "../../assets/images/Luxon.png";
 
 const Login = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -28,7 +31,7 @@ const Login = () => {
 
       if (response.ok) {
         alert(data.message); // ログイン成功メッセージ
-        // ここでリダイレクトなどの処理を追加できう
+        navigate('/');  // ホーム画面へ遷移
       } else {
         alert(data.message || 'ログインに失敗しました'); // エラーメッセージを表示
       }
