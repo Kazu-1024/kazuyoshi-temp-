@@ -8,8 +8,8 @@ import ratingBg from "../../assets/images/ratingBg.png";
 const Result = () => {
   // サンプルデータ
   const [resultData, setResultData] = useState({
-    winner: {name: '織田信長', rate: 1314 },
-    loser: {name: '山口琉哉', rate: 1298 }
+    winner: {name: 'doraemonmo', rate: 1314 },
+    loser: {name: 'doraemonmo', rate: 1298 }
   });
 
   return (
@@ -38,10 +38,10 @@ const Result = () => {
                 <div className="w-5/6 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-lg mr-2">{resultData.winner.name}</p>
+                  <p className="text-lg mx-2">{resultData.winner.name}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgroud" className="block" />
-                    <p className="absolute inset-0 left-4 flex items-center justify-center text-white font-jaro tracking-wider text-xl">
+                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-xl outlined-bold">
                       {resultData.winner.rate}
                     </p>
                   </div>
@@ -56,10 +56,10 @@ const Result = () => {
                 <div className="w-11/12 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-lg mr-2">{resultData.loser.name}</p>
+                  <p className="text-[15px] mx-2">{resultData.loser.name}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgrond" className="block" />
-                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-[16px]">
+                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-[14px] outlined-bold">
                       {resultData.loser.rate}
                     </p>
                   </div>
