@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import hamburgerIcon from "../../assets/images/hamburgerIcon.png";
+import userIcon from "../../assets/images/userIcon.png";
+import settingIcon from "../../assets/images/settingIcon.png";
 
 const HamburgerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,10 +38,10 @@ const HamburgerMenu = () => {
 
       {/* メニュー */}
       {isOpen && (
-        <div className="fixed inset-0 flex-col items-center justify-center z-50 mt-72 ml-11">
-          <div className='bg-gray-700  shadow-lg w-11/12 max-w-md pt-1 flex'>
-            <img src={hamburgerIcon} alt="" className='ml-2 mt-2 h-4 w-1/12'/>
-            <p className='mt-1 ml-5 text-white '>MENU</p>
+        <div className="fixed inset-0  flex-col items-center justify-center z-20 pt-60 pl-11 pr-4 bg-gray-500 bg-opacity-50">
+          <div className='rounded-t-lg bg-gray-700  shadow-lg w-11/12 max-w-md pt-1 flex z-10'>
+            <img src={hamburgerIcon} alt="" className='ml-2 mt-2 h-4 w-1/12' />
+            <p className='mt-1 ml-5 text-white font-bold'>MENU</p>
             <div className=" justify-end ml-auto">
               <button
                 onClick={closeMenu}
@@ -61,22 +63,33 @@ const HamburgerMenu = () => {
               </button>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6" >
+          <div className="bg-white rounded-b-lg shadow-lg w-11/12  h-96 max-w-md p-6" >
             <ul className="flex flex-col">
-              <li className="px-4 py-2 hover:bg-gray-100">
-                <a href="#home">メニュー</a>
+              <button>
+                <li className="pl-4 py-2 hover:bg-gray-100 flex">
+                  <img src={settingIcon} alt="" className='size-7' />
+                  <a href="#home" className=' ml-4 font-bold pt-0.5'>設定</a>
+                  <div class="flex items-center justify-center w-4 h-4 ml-auto mt-1 pt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                    </svg>
+                  </div>
+                </li>
+              </button>
+              <li className='border-t border-black border-0'>
               </li>
-              <li className="px-4 py-2 hover:bg-gray-100">
-                <a href="#about">プロフィール</a>
-              </li>
-              <li className="px-4 py-2 hover:bg-gray-100">
-                <a href="#services">設定</a>
-              </li>
-              <li className="px-4 py-2 hover:bg-gray-100">
-                <a href="#contact">その他</a>
-              </li>
-              <li className="px-4 py-2 hover:bg-gray-100">
-                <a href="#contact">ログアウト</a>
+              <button>
+                <li className="pl-4 py-2 hover:bg-gray-100 flex ">
+                  <img src={userIcon} alt="" className='size-7'/>
+                  <a href="#about " className='ml-4 font-bold inline-block pt-0.5'>ユーザー設定</a>
+                  <div className="flex items-center justify-center w-4 h-4 ml-auto mt-1 pt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                    </svg>
+                  </div>
+                </li>
+              </button>
+              <li className='border-t border-black border-0'>
               </li>
             </ul>
           </div>
