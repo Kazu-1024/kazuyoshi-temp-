@@ -3,8 +3,59 @@ import Choices from './Choices';
 import defaultIcon from '../../assets/images/defaultIcon.png';
 import Button from '../../assets/images/Button.png';
 import heart from '../../assets/images/heart.png';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const InGame = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const roomId = location.state?.roomId;
+  
+  // WebSocket接続の確立
+  useEffect(() => {
+    if (!roomId) {
+      navigate('/');
+      return;
+    }
+
+    const ws = new WebSocket('ws://localhost:8080/matchmaking');
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('受信したメッセージ:', data);
+
+      switch (data.status) {
+        case 'question':
+          // 問題データを受け取った時の処理
+          // 既存のsampleQuestionの代わりにサーバーから受け取った問題を使用
+          setCurrentQuestion(data.question);
+          break;
+        case 'game_end':
+          // ゲーム終了時の処理
+          navigate('/result', { 
+            state: { 
+              result: data.result,
+              finalScoreA: scoreA,
+              finalScoreB: scoreB
+            } 
+          });
+          break;
+        default:
+          console.log('未処理のメッセージタイプ:', data.status);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocketエラー:', error);
+      navigate('/');
+    };
+
+    return () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [roomId, navigate]);
+
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);

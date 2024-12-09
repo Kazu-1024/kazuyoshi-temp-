@@ -11,6 +11,78 @@ const Matching = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   // スクロール可能なコンテナへの参照を保持するref
   const scrollContainerRef = useRef(null);
+  const [userRate, setUserRate] = useState(1500); // レート状態を追加
+  const navigate = useNavigate();
+  const [ws, setWs] = useState(null);
+
+  // WebSocket接続の確立
+  useEffect(() => {
+    const websocket = new WebSocket('ws://localhost:8080/matchmaking');
+    
+    websocket.onopen = () => {
+      console.log('WebSocket接続確立');
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('受信したメッセージ:', data);
+
+      switch (data.status) {
+        case 'matched':
+          // マッチングが成功したら、MatchLoadingコンポーネントに遷移
+          navigate('/matchloading', { 
+            state: { 
+              roomId: data.room_id 
+            }
+          });
+          break;
+        case 'timeout':
+          alert('マッチングがタイムアウトしました。');
+          navigate(-1);
+          break;
+        default:
+          console.log('未処理のメッセージタイプ:', data.status);
+      }
+    };
+
+    websocket.onerror = (error) => {
+      console.error('WebSocketエラー:', error);
+      alert('接続エラーが発生しました。');
+      navigate(-1);
+    };
+
+    websocket.onclose = () => {
+      console.log('WebSocket接続が閉じられました');
+    };
+
+    setWs(websocket);
+
+    // コンポーネントのクリーンアップ時にWebSocket接続を閉じる
+    return () => {
+      if (websocket.readyState === WebSocket.OPEN) {
+        websocket.close();
+      }
+    };
+  }, [navigate]);
+
+  // レート取得用のuseEffect
+  useEffect(() => {
+    const fetchUserRate = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/rate/user', {
+          credentials: 'include', // クッキーを含める
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserRate(data.rating);
+        }
+      } catch (error) {
+        console.error('レート取得エラー:', error);
+      }
+    };
+
+    fetchUserRate();
+  }, []);
 
   // 表示するスライドのデータ配列-----------------------------
   const cardText = [
@@ -57,11 +129,14 @@ const Matching = () => {
     }
   };
 
-  const navigate = useNavigate();
-
+  // キャンセルボタンのハンドラー
   const backHomepage = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
     navigate(-1);
   };
+
   //スライドコンテナの切れ端表示する処理
   //-------------------------------------------------------------------------
   return (
@@ -78,7 +153,7 @@ const Matching = () => {
           <img src={MTH} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
           <div className="flex">
             <img src={RatingB} alt="" className=" rounded-full" />
-            <p>1314</p>
+            <p>{userRate}</p>
           </div>
         </div>
         {/*相手ののアイコン、ランク、レート表示 */}
