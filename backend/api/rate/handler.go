@@ -133,3 +133,25 @@ func GetPlayerRating(db *sql.DB, username string) int {
 func UpdatePlayerRatings(db *sql.DB, winnerID string, winnerNewRating int, loserID string, loserNewRating int) error {
 	return updatePlayerRatings(db, winnerID, winnerNewRating, loserID, loserNewRating)
 }
+
+// GetUserRatingHandler ログインしているユーザーのレートを返すハンドラー
+func GetUserRatingHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// クッキーからユーザー名を取得
+		cookie, err := r.Cookie("username")
+		if err != nil {
+			http.Error(w, "ログインが必要です", http.StatusUnauthorized)
+			return
+		}
+
+		// ユーザーのレートを取得
+		rating := getPlayerRating(db, cookie.Value)
+
+		// レスポンスを返す
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"username": cookie.Value,
+			"rating":   rating,
+		})
+	}
+}

@@ -68,6 +68,7 @@ func main() {
 	r.HandleFunc("/friends/pending", friends.GetPendingRequestsHandler(db)).Methods("GET")
 	r.HandleFunc("/rate/calculate", rate.CalculateRatingHandler(db)).Methods("POST")
 	r.HandleFunc("/rate/top", rate.GetTopPlayersHandler(db)).Methods("GET")
+	r.HandleFunc("/rate/user", rate.GetUserRatingHandler(db)).Methods("GET")
 
 	// サーバーの設定
 	port := ":8080"
@@ -81,7 +82,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// ワイルドカードつかえんかった fuck this shit
+		// localhost:3000からのリクエストを許可(*が使えない)
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

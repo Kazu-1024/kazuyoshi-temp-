@@ -73,10 +73,12 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 
 	if matchedRoom != nil {
 		// 既存の部屋とマッチングが成功した場合の処理
+		matchedRoom.IsMatched = true
+		matchedRoom.Player2ID = cookie.Value
+		matchedRoom.Player2Conn = conn
 		roomsMutex.Unlock()
 
 		// 両プレイヤーにマッチング成功を通知
-		matchedRoom.Player2Conn = conn
 		matchResponse := map[string]string{
 			"status":  "matched",
 			"room_id": matchedRoom.ID,
@@ -84,11 +86,8 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
 
-		// Player2の場合はゲームセッションを開始しない
-		if cookie.Value == matchedRoom.Player2ID {
-			// 接続を維持したまま待機
-			select {}
-		}
+		// 接続を維持
+		select {}
 
 		// Player1の場合のみゲームセッションを開始
 		handleGameSession(matchedRoom)
@@ -380,10 +379,13 @@ func handlePlayerAnswer(room *Room, playerID string, correctAnswer string) bool 
 		return isCorrect
 
 	case <-answerTimeout:
-		log.Printf("回答タイムアウト")
-		timeoutMessage := map[string]string{
-			"status":  "answer_timeout",
-			"message": "回答時間切れ",
+		log.Printf("回答時間切れ")
+		// タイムアウトメッセージを変更
+		timeoutMessage := map[string]interface{}{
+			"status":         "answer_result",
+			"correct":        false,
+			"answer":         "時間切れ",
+			"correct_answer": correctAnswer,
 		}
 		conn.WriteJSON(timeoutMessage)
 		otherConn.WriteJSON(timeoutMessage)
@@ -392,22 +394,22 @@ func handlePlayerAnswer(room *Room, playerID string, correctAnswer string) bool 
 }
 
 func waitForMatch(room *Room) bool {
-	// タイムアウト用のティッカーを設定（5秒後にタイムアウト）
-	ticker := time.NewTicker(5 * time.Second)
+	// タイムアウト時間を30秒に延長
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for {
-		// マッチングが成功した場合は即座にtrueを返して終了
+		roomsMutex.Lock()
 		if room.IsMatched {
+			roomsMutex.Unlock()
 			return true
 		}
+		roomsMutex.Unlock()
 
 		select {
 		case <-ticker.C:
-			// タイムアウト時の処理
 			roomsMutex.Lock()
 			if !room.IsMatched {
-				// マッチングが成立していない場合、部屋を削除してタイムアウトを通知
 				delete(rooms, room.ID)
 				room.Player1Conn.WriteJSON(map[string]string{
 					"status": "timeout",
@@ -417,8 +419,6 @@ func waitForMatch(room *Room) bool {
 			}
 			roomsMutex.Unlock()
 		default:
-			// マッチング待機中は100ミリ秒ごとにチェック
-			// CPU使用率を抑えるためのスリープ
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
