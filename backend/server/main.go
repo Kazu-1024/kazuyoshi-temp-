@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// データベース接続の初期化
-	connStr := "root:root@tcp(localhost:3306)/sys3"
+	connStr := "root:114514z4Z@tcp(localhost:3306)/sys3"
 	var db *sql.DB
 	var err error
 	db, err = sql.Open("mysql", connStr)
