@@ -65,7 +65,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	for _, room := range rooms {
 		if room.PlayerID != cookie.Value && !room.IsMatched {
 			matchedRoom = room
-			matchedRoom.IsMatched = true
+			matchedRoom.IsMatched = false
 			matchedRoom.Player2ID = cookie.Value
 			break
 		}
