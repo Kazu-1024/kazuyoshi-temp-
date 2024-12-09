@@ -18,6 +18,7 @@ module.exports = {
         notoSansJp: ['"Noto Sans JP"', 'sans-serif'],
         anton: ['Anton', 'sans-serif'],
         afacad: ['afacad', 'sans-serif'],
+        jaro: ['jaro', 'sans-serif'],
       }
     },
   },
