@@ -48,7 +48,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("クッキーエラー: %v\n", err)
 		conn.WriteJSON(map[string]string{
-			"status":  "error",
+			"status":  "unauthorized",
 			"message": "ログインが必要です",
 		})
 		return

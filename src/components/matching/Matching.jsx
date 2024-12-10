@@ -40,15 +40,13 @@ const Matching = () => {
           alert('マッチングがタイムアウトしました。');
           navigate(-1);
           break;
+        case 'unauthorized':
+          alert('マッチングに失敗しました。ログインしてください');
+          navigate('/login');
+          break;
         default:
           console.log('未処理のメッセージタイプ:', data.status);
       }
-    };
-
-    websocket.onerror = (error) => {
-      console.error('WebSocketエラー:', error);
-      alert('接続エラーが発生しました。');
-      navigate(-1);
     };
 
     websocket.onclose = () => {
