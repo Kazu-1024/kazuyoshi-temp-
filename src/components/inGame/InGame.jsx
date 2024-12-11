@@ -3,6 +3,8 @@ import Choices from './Choices';
 import defaultIcon from '../../assets/images/defaultIcon.png';
 import Button from '../../assets/images/Button.png';
 import heart from '../../assets/images/heart.png';
+import correct from '../../assets/images/correct.png';
+import incorrect from "../../assets/images/incorrect.png";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const InGame = () => {
@@ -11,50 +13,50 @@ const InGame = () => {
   const roomId = location.state?.roomId;
   
   // WebSocket接続の確立
-  useEffect(() => {
-    if (!roomId) {
-      navigate('/');
-      return;
-    }
+  // useEffect(() => {
+  //   if (!roomId) {
+  //     navigate('/');
+  //     return;
+  //   }
 
-    const ws = new WebSocket('ws://localhost:8080/matchmaking');
+  //   const ws = new WebSocket('ws://localhost:8080/matchmaking');
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('受信したメッセージ:', data);
+  //   ws.onmessage = (event) => {
+  //     const data = JSON.parse(event.data);
+  //     console.log('受信したメッセージ:', data);
 
-      switch (data.status) {
-        case 'question':
-          // 問題データを受け取った時の処理
-          // 既存のsampleQuestionの代わりにサーバーから受け取った問題を使用
-          setCurrentQuestion(data.question);
-          break;
-        case 'game_end':
-          // ゲーム終了時の処理
-          navigate('/result', { 
-            state: { 
-              result: data.result,
-              finalScoreA: scoreA,
-              finalScoreB: scoreB
-            } 
-          });
-          break;
-        default:
-          console.log('未処理のメッセージタイプ:', data.status);
-      }
-    };
+  //     switch (data.status) {
+  //       case 'question':
+  //         // 問題データを受け取った時の処理
+  //         // 既存のsampleQuestionの代わりにサーバーから受け取った問題を使用
+  //         setCurrentQuestion(data.question);
+  //         break;
+  //       case 'game_end':
+  //         // ゲーム終了時の処理
+  //         navigate('/result', { 
+  //           state: { 
+  //             result: data.result,
+  //             finalScoreA: scoreA,
+  //             finalScoreB: scoreB
+  //           } 
+  //         });
+  //         break;
+  //       default:
+  //         console.log('未処理のメッセージタイプ:', data.status);
+  //     }
+  //   };
 
-    ws.onerror = (error) => {
-      console.error('WebSocketエラー:', error);
-      navigate('/');
-    };
+  //   ws.onerror = (error) => {
+  //     console.error('WebSocketエラー:', error);
+  //     navigate('/');
+  //   };
 
-    return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [roomId, navigate]);
+  //   return () => {
+  //     if (ws && ws.readyState === WebSocket.OPEN) {
+  //       ws.close();
+  //     }
+  //   };
+  // }, [roomId, navigate]);
 
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
@@ -66,7 +68,6 @@ const InGame = () => {
   const [timeLeft, setTimeLeft] = useState(100);  // 問題ごとの残り時間
   const [showChoices, setShowChoices] = useState(false);  // 問題選択肢の表示/非表示
   const [selectedChoice, setSelectedChoice] = useState(null); // 選択された解答を保持
-  const [currentQuestion, setCurrentQuestion] = useState(1);  // 現在の問題番号
   const [isPaused, setIsPaused] = useState(false);  // タイマーの停止/開始の制御
   const [answerPhase, setAnswerPhase] = useState(false);
   
@@ -78,79 +79,321 @@ const InGame = () => {
   const [displayText, setDisplayText] = useState("");
 
   // サンプル問題のデータ
-  const sampleQuestion = {
-    questionText:
-    'Much of the aid was ferried across the Atlantic Ocean, and so-called Liberty ships provided the backbone of this effort. Thanks to technological improvements, crossing the often-rough Atlantic had generally become a less dangerous prospect for ships in the 1940s than it had been just a few decades earlier. In wartime, however, (       ). Liberty ships were slow, and German submarines patrolled Atlantic waters. Attacks were a constant worry, and some ships along with their crews were lost.',
-    choices: [
-    'a new threat appeared',
-    'more ships were available',
-    'ships only traveled at night',
-    'crew had to be paid more',
-    ],
-    correctAnswer: 'a new threat appeared',
-  };
+  const [sampleQuestion, setSampleQuestion] = useState([
+    {
+      id: 1,
+      questionText: 
+        'Much of the aid was ferried across the Atlantic Ocean, and so-called Liberty ships provided the backbone of this effort. Thanks to technological improvements, crossing the often-rough Atlantic had generally become a less dangerous prospect for ships in the 1940s than it had been just a few decades earlier. In wartime, however, (       ). Liberty ships were slow, and German submarines patrolled Atlantic waters. Attacks were a constant worry, and some ships along with their crews were lost.',
+      choices: [
+        'a new threat appeared',
+        'more ships were available',
+        'ships only traveled at night',
+        'crew had to be paid more',
+      ],
+      correctAnswer: 'a new threat appeared',
+    },
+    {
+      id: 2,
+      questionText: 
+        'The invention of the printing press in the 15th century revolutionized the way information was shared. Books could now be mass-produced rather than painstakingly copied by hand. This development (       ), leading to an explosion of knowledge and literacy throughout Europe. The effects of this innovation are still felt in modern education and communication.',
+      choices: [
+        'restricted access to books',
+        'reduced the spread of ideas',
+        'lowered the cost of books',
+        'increased manual copying',
+      ],
+      correctAnswer: 'lowered the cost of books',
+    },
+    {
+      id: 3,
+      questionText: 
+        'Forests are vital to maintaining ecological balance and supporting biodiversity. However, deforestation has accelerated over the past century due to human activities such as agriculture and logging. As a result, (       ), leading to loss of habitat for countless species and contributing to climate change.',
+      choices: [
+        'wildlife has flourished',
+        'soil quality has improved',
+        'natural disasters have decreased',
+        'ecosystems have been disrupted',
+      ],
+      correctAnswer: 'ecosystems have been disrupted',
+    },
+    {
+      id: 4,
+      questionText:
+        'Tourists often visit historic sites to learn about the past. Unfortunately, large numbers of visitors can ( ) these sites over time. Some governments limit the number of visitors to protect them. ',
+        choices: [
+          'repair',
+          'damege',
+          'maintain',
+          'decorate',
+        ],
+        correctAnswer: 'damege',
+    },
+  ]);
 
-  // 文字を一文字ずつ表示
-  useEffect(() => {
+  // 問題インデックスの管理
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);  // 現在の問題番号（インデックス）
+  const [currentQuestion, setCurrentQuestion] = useState(sampleQuestion[0]);  // 現在の問題
+
+  // 問題の早押しボタンの無効化を管理
+  const [answerLocked, setAnswerLocked] = useState(false);
+
+  // 正解不正解の表示を管理
+  const [showCorrectImage, setShowCorrectImage] = useState(false);
+  const [showIncorrectImage, setShowIncorrectImage] = useState(false);
+
+  //プレイヤ（自分とあいて）の状態を管理
+  const [currentPhase, setCurrentPhase] = useState('idle');
+  // 'idle' : どっちも未解答, 'playerA' : プレイヤーAが解答中, 'playerB' : プレイヤーBが解答中
+
+  // 解答権を管理するstate
+  const [answers, setAnswers] = useState({
+    playerA: false,
+    playerB: false,
+  });
+
+  const [gameEnded, setGameEnded] = useState(false);  // ゲーム終了状態のフラグ
+
+   // 文字を一文字ずつ表示
+   useEffect(() => {
     if (!isPaused) {
       displayTextTimerRef.current = setInterval(() => {
         setDisplayText((prev) => {
           const nextIndex = prev.length;
-          if (nextIndex < sampleQuestion.questionText.length) {
-            return prev + sampleQuestion.questionText[nextIndex];
+          if (nextIndex < currentQuestion.questionText.length) {
+            return prev + currentQuestion.questionText[nextIndex];
           } else {
             clearInterval(displayTextTimerRef.current);
             return prev;
           }
         });
-      }, 50);
+      }, 90);
     } else {
       clearInterval(displayTextTimerRef.current);  // isPausedがtrueの場合は停止
     }
     
     return () => clearInterval(displayTextTimerRef.current);
-  }, [isPaused, sampleQuestion.questionText]);
+  }, [isPaused, currentQuestion.questionText]);
   
-  // タイマー
+
+  
+  // 問題のタイマー
   useEffect(() => {
-    if (!isPaused) {
+    if (displayText === currentQuestion.questionText && !isPaused) {
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => (prevTime <= 0 ? 0 : prevTime - 1));
-      }, 300);
+      }, 150);  // 現在は20秒
     } else {
       clearInterval(timerIntervalRef.current);  // isPausedがtrueの場合は停止
     }
   
     return () => clearInterval(timerIntervalRef.current);
-  }, [isPaused]);
+  }, [displayText, currentQuestion.questionText, isPaused]);
 
-  // 早押しボタンがクリックされたときの処理
+  // 問題のタイマーを監視し、0になったら次の問題へ移行
+  useEffect(() => {
+    if (timeLeft === 0) {
+      nextQuestion();
+    }
+  }, [timeLeft]);
+
+  const nextQuestion = () => {
+    if (gameEnded) return; // 対戦が終了していたら次の問題に行かないようにする
+
+    if (currentQuestionIndex + 1 < sampleQuestion.length) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setTimeLeft(100); // 残り時間をリセット
+        setAnswerLocked(false); // 次の問題に進むときに早押しボタンのロックを解除
+        setIsPaused(false); // タイマーを再開
+        setAnswers({playerA: false, playerB: false});
+      }, 2000); // 1000ミリ秒の遅延
+    } else {
+      // 最後の問題だった場合の処理
+      setTimeout(() => {
+        handleGameEnd();
+      }, 5000);
+    }
+  };
+  
+
+  // 早押しボタンがクリックされたときの処理(自分側)
   const handlePlayerClick = () => {
-    setIsPaused(true);  // タイマーを停止
-    clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
-    clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
-    setAnswerPhase(true); //解答フェーズに移行
-;   setShowChoices(true); // 選択肢を表示
-  }
+    if (currentPhase === 'idle') {
+      setCurrentPhase('playerA'); // プレイヤーA解答中
+      setIsPaused(true);  // タイマーを停止
+      clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
+      clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
+      setAnswerPhase(true); //解答フェーズに移行
+      setShowChoices(true); // 選択肢を表示
+      setAnswerLocked(true);  // 早押しボタンが押されたときにボタンを無効化
+    }
+  };
+
 
   // 解答選択時の処理
   const handleChoiceSelect = (choice) => {
     setSelectedChoice(choice);  // 選択した解答をセット
-    setShowChoices(false); // 選択肢を非表示
+    setShowChoices(false);  // 選択肢を非表示
 
-    // とりあえずプレイヤーAの加点処理
-    // ここらへんはバックでやると思う
-    const isCorrect = choice === sampleQuestion.correctAnswer;
-    setScoreA(isCorrect ? scoreA + 1 : scoreA);
-    setCurrentQuestion(isCorrect ? currentQuestion + 1 : currentQuestion);
-    setIsPaused(false);
+    // playerAの正誤判定
+    const isCorrect = choice === currentQuestion.correctAnswer;
+    if (isCorrect) {
+      setScoreA(scoreA + 1);
+      handleCorrectClick();  // 正解時に呼ばれる
+
+      // 現在の文字表示タイマーをクリアして再スタート
+      clearInterval(displayTextTimerRef.current);
+
+      displayTextTimerRef.current = setInterval(() => {
+        setDisplayText((prev) => {
+          const nextIndex = prev.length;
+          if (nextIndex < currentQuestion.questionText.length) {
+            return prev + currentQuestion.questionText[nextIndex];
+          } else {
+            // 完全に表示された場合の処理
+            clearInterval(displayTextTimerRef.current); // タイマーをクリア
+            setCurrentPhase('idle');  // 解答フェーズをidleに戻す
+            nextQuestion(); // 次の問題に進む
+            return prev;
+          }
+        });
+      }, 10); // 高速表示の速度
+      
+    } else {
+      setHpA(hpA - 1);
+      handleIncorrectClick();  // 不正解時に呼ばれる
+      setIsPaused(false);
+      setAnswers({playerA: true});  // 解答権を使用
+      setCurrentPhase('idle');  // 不正解後にフェーズをidleに戻す
+    }
   };
+
+  // 対戦相手がボタンを押したら（一応）
+  const handleOpponentClick = () => {
+    if (currentPhase === 'idle') {
+      setCurrentPhase('playerB'); // 相手の解答フェース
+      setIsPaused(true);  // タイマーを停止
+      clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
+      clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
+      setAnswerLocked(true);  // 自分側の早押しボタンを押せなくする
+      handleOpponentAnswer(); // 対戦相手の解答処理の呼び出し
+    }
+  };
+
+  // 対戦相手の解答処理(デバッグに使った)
+  const handleOpponentAnswer = () => {
+   // シミュレーション用: ランダムで正解/不正解を生成
+    const isCorrect = Math.random() > 0.5; // 50%の確率で正解
+
+    setTimeout(() => {
+      if (isCorrect) {
+        setScoreB(scoreB + 1);
+        handleCorrectClick(); // 正解時の処理（アニメーション）
+        // 現在の文字表示タイマーをクリアして再スタート
+        clearInterval(displayTextTimerRef.current);
+
+        displayTextTimerRef.current = setInterval(() => {
+          setDisplayText((prev) => {
+            const nextIndex = prev.length;
+            if (nextIndex < currentQuestion.questionText.length) {
+              return prev + currentQuestion.questionText[nextIndex];
+            } else {
+              // 完全に表示された場合の処理
+              clearInterval(displayTextTimerRef.current); // タイマーをクリア
+              setTimeout(nextQuestion, 2000); // 次の問題へ
+              return prev;
+            }
+          });
+        }, 10); // 高速表示の速度
+      } else {
+        setHpB(hpB - 1);
+        handleIncorrectClick(); // 不正解時の処理（アニメーション）
+        setAnswers({playerB: true});  // 解答権を使用
+        setIsPaused(false); // タイマー再開
+      }
+      setCurrentPhase('idle'); // フェーズをリセット
+      setAnswerLocked(false); // プレイヤーの早押しボタンを再度有効化
+    }, 2000); // 解答選択にかかる時間をシミュレート
+  };
+
+  // 解答権を管理して対戦状況の管理
+  useEffect(() => {
+    //　体力が0になったプレイヤーがいたら対戦を狩猟
+    if (hpA == 0) {
+      setTimeout(() => {
+        handleGameEnd('playerB'); // プレイヤーBが勝利
+      }, 2000);
+    } else if (hpB == 0) {
+      setTimeout(() => {
+        handleGameEnd('playerA'); // プレイヤーAが勝利
+      }, 2000);
+    }
+    // スコアが5に達したプレイヤーがいたら対戦を終了
+    else if (scoreA == 5) {
+      setTimeout(() => {
+        handleGameEnd('playerA'); // プレイヤーAが勝利
+      }, 2000);
+    } else if (scoreB == 5) {
+      setTimeout(() => {
+        handleGameEnd('playerB'); // プレイヤーBが勝利
+      }, 2000);
+    // 両者が解答権を使用した場合
+    } else if (answers.playerA && answers.playerB) {
+      setTimeout(() => {
+        clearInterval(displayTextTimerRef.current);
+
+        displayTextTimerRef.current = setInterval(() => {
+          setDisplayText((prev) => {
+            const nextIndex = prev.length;
+            if (nextIndex < currentQuestion.questionText.length) {
+              return prev + currentQuestion.questionText[nextIndex];
+            } else {
+              // 完全に表示された場合の処理
+              clearInterval(displayTextTimerRef.current); // タイマーをクリア
+              nextQuestion(); // 次の問題に進む
+              return prev;
+            }
+          });
+        }, 10); // 高速表示の速度
+      }, 2000);
+    }
+  }, [answers, hpA, hpB, scoreA, scoreB, currentQuestion.questionText]);
 
   // 解答の残り時間がなくなった場合
   const handleTimeOut = () => {
     setShowChoices(false); // 選択肢を非表示
     setIsPaused(false); // タイマー再開
     setAnswerPhase(false); // 解答フェーズを終了
+  };
+
+  // 問題のインデックスが更新されたら次の問題を設定
+  useEffect(() => {
+    if (currentQuestionIndex < sampleQuestion.length) {
+      setCurrentQuestion(sampleQuestion[currentQuestionIndex]);
+      setSelectedChoice(null); // 前回の選択肢をリセット
+      setAnswerLocked(false); // 早押しボタンを再度有効に
+      setDisplayText(""); // 問題文のテキストをリセット
+    }
+  }, [currentQuestionIndex, sampleQuestion]);
+
+  // 問題の正解不正解のアニメーション
+  const handleCorrectClick = () => {
+    setShowCorrectImage(true);
+    
+    const timer = setTimeout(() => {
+      setShowCorrectImage(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  };
+  const handleIncorrectClick = () => {
+    setShowIncorrectImage(true);
+    
+    const timer = setTimeout(() => {
+      setShowIncorrectImage(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   };
 
   const renderHpDots = (hp, isPlayerB = false) => {
@@ -196,11 +439,36 @@ const InGame = () => {
     })
   };
 
+  const handleGameEnd = (winner) => {
+    setGameEnded(true); // ゲーム終了フラグをセット
+
+    if (displayText !== currentQuestion.questionText) {
+      setTimeout(() => {
+      displayTextTimerRef.current = setInterval(() => {
+        setDisplayText((prev) => {
+          const nextIndex = prev.length;
+          if (nextIndex < currentQuestion.questionText.length) {
+            return prev + currentQuestion.questionText[nextIndex];
+          } else {
+            // 完全に表示された場合の処理
+            clearInterval(displayTextTimerRef.current); // タイマーをクリア
+            navigate('/Result');
+            return prev;
+          }
+        });
+      }, 10); // 高速表示の速度
+    },2000)
+    } else {
+      setTimeout(() => {
+        console.log(`${winner} wins the game!`);
+      }, 2000);
+    }
+  }
   
   return (
     <>
       <div className="relative flex flex-col h-full">
-        {showChoices && (
+        {(showChoices || currentPhase === 'playerB') && (
           <div className="absolute inset-0 bg-gray-500 bg-opacity-50 z-20" />
         )}
         {/*　対戦者の情報を表示 */}
@@ -230,7 +498,7 @@ const InGame = () => {
 
             {/* 現在の問題数 */}
             <div className="absolute right-0 left-0 mx-auto w-full text-center mt-2">
-              <p className="font-kdam text-4xl">Q{currentQuestion}</p>
+              <p className="font-kdam text-4xl">Q{currentQuestionIndex + 1}</p>
             </div>
         </div>
 
@@ -251,7 +519,7 @@ const InGame = () => {
             </div>
             {/* 解答の選択肢を表示 */}
             <div className="grid grid-cols-2 gap-4 text-[11px] font-inter font-bold">
-              {sampleQuestion.choices.map((choice, index) => (
+              {currentQuestion.choices.map((choice, index) => (
                 <div key={index} className="">
                   {index + 1}. {choice}
                 </div>
@@ -265,21 +533,50 @@ const InGame = () => {
           {/* 選択肢の表示 */}
           {showChoices && (
             <div className="absolute flex top-5 items-center justify-center bg-gray-100 rounded-3xl shadow-lg w-10/12 h-56 mx-auto z-20">
-              <Choices choices={sampleQuestion.choices} onChoiceSelect={handleChoiceSelect}  onTimeOut={handleTimeOut}/>
+              <Choices choices={currentQuestion.choices} onChoiceSelect={handleChoiceSelect}  onTimeOut={handleTimeOut}/>
             </div>
           )}
           {/* ボタンのスタイル */}
-            <button type="button" className="mx-auto my-auto z-10" onClick={handlePlayerClick} >
+            <button type="button" className="mx-auto my-auto z-10" onClick={handlePlayerClick} disabled={answerLocked}>
               <img src={Button} draggable="false"/>
             </button>
         </div>
-        {/* 正誤判定結果の表示 */}
-        {selectedChoice && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-10 bg-gray-600 bg-opacity-50  text-white flex items-center justify-center z-30">
+        {/* 対戦相手が解答中の時の表示 */}
+        {currentPhase === 'playerB' && (
+          <div className="absolute bottom-28 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-10 bg-gray-600 bg-opacity-50  text-white flex items-center justify-center z-30">
             <span className="text-lg font-bold">
-              {selectedChoice === sampleQuestion.correctAnswer ? '正解！' : '不正解！'}
+              対戦相手が解答中...
             </span>
           </div>
+        )}
+        {/* 正誤判定結果の表示 */}
+        {selectedChoice && (
+          <>
+            {showCorrectImage && (
+              <div className="absolute mt-40 top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none animate-fadeInOut">
+                <img 
+                  src={correct} 
+                  alt="Correct" 
+                  className="w-1/2 h-auto opacity-50" 
+                />
+              </div>
+            )}
+            {showIncorrectImage && (
+              <div className="absolute mt-40 top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none animate-fadeInOut">
+                <img 
+                  src={incorrect} 
+                  alt="Incorrect" 
+                  className="w-1/2 h-auto opacity-50" 
+                />
+              </div>
+            )}
+
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-10 bg-gray-600 bg-opacity-50  text-white flex items-center justify-center z-30">
+              <span className="text-lg font-bold">
+                {selectedChoice === currentQuestion.correctAnswer ? '正解！' : '不正解！'}
+              </span>
+            </div>
+          </>
         )}
       </div>
     </>
