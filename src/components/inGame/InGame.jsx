@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react'
+import React, {useState,useEffect, useRef} from 'react'
 import Choices from './Choices';
 import defaultIcon from '../../assets/images/defaultIcon.png';
 import Button from '../../assets/images/Button.png';
@@ -11,53 +11,93 @@ const InGame = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const roomId = location.state?.roomId;
-  
+  const existingWs = location.state?.ws; // WebSocket接続を受け取る
+  const wsRef = useRef(null);
+  const [playerId, setPlayerId] = useState(null);
+
+  // クッキーからusernameを取得
+  useEffect(() => {
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    };
+    const username = getCookie('username');
+    if (username) {
+      setPlayerId(username);
+    }
+  }, []);
+
   // WebSocket接続の確立
   useEffect(() => {
-    if (!roomId) {
-      navigate('/');
+    if (!roomId || !playerId) {
+      console.log('roomIdまたはplayerIdが未設定:', { roomId, playerId });
       return;
     }
 
-    const ws = new WebSocket('ws://localhost:8080/matchmaking');
+    // 既存のWebSocket接続があれば使用し、なければ新規作成
+    if (existingWs) {
+      console.log('既存のWebSocket接続を使用します');
+      wsRef.current = existingWs;
+    } else {
+      console.log('新規WebSocket接続を作成します');
+      const ws = new WebSocket('ws://localhost:8080/matchmaking');
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        console.log('WebSocket接続が確立されました');
+        ws.send(JSON.stringify({
+          type: 'game_start',
+          roomId: roomId,
+          playerId: playerId
+        }));
+      };
+    }
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('受信したメッセージ:', data);
+    // メッセージハンドラーの設定
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('受信したメッセージの詳細:', data);
 
-      switch (data.status) {
-        case 'game_start':
-          // 問題データを受け取った時の処理
-          if (data.questions && Array.isArray(data.questions)) {
-            const formattedQuestions = data.questions.map(q => ({
-              id: q.id,
-              questionText: q.question_text,
-              choices: Array.isArray(q.choices) ? q.choices : [],
-              correctAnswer: q.correct_answer,
-            }));
-            console.log('フォーマット後の問題データ:', formattedQuestions);
-            setSampleQuestion(formattedQuestions);
-            if (formattedQuestions.length > 0) {
-              setCurrentQuestion(formattedQuestions[0]);
-            }
+        if (data.status === 'game_start' && data.questions) {
+          console.log('問題データを受信:', data.questions);
+          // 問題データのフォーマットを修正
+          const formattedQuestions = data.questions.map(q => ({
+            id: q.id,
+            questionText: q.question_text || '',
+            choices: q.choices || [],
+            correctAnswer: q.correct_answer || ''
+          }));
+          
+          setSampleQuestion(formattedQuestions);
+          if (formattedQuestions.length > 0) {
+            setCurrentQuestion(formattedQuestions[0]);
           }
-          break;
-        default:
-          console.log('未処理のメッセージタイプ:', data.status);
+        } else if (data.status === 'answer_given') {
+          console.log('answer_given case に入りました');
+          const answeredPlayerId = data.playerId;
+          
+          if (answeredPlayerId === playerId) {
+            setIsPaused(true);
+            setShowChoices(true);
+            setAnswerLocked(true);
+          } else {
+            setIsPaused(true);
+            setAnswerLocked(true);
+          }
+        }
+      } catch (error) {
+        console.error('WebSocketメッセージの処理中にエラー:', error);
       }
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocketエラー:', error);
-      navigate('/');
     };
 
     return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
       }
     };
-  }, [roomId, navigate]);
+  }, [roomId, playerId, existingWs]);
 
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
@@ -79,7 +119,7 @@ const InGame = () => {
   // 問題文の表示用
   const [displayText, setDisplayText] = useState("");
 
-  // サンプル問題のデ���タ
+  // サンプル問題データ
   const [sampleQuestion, setSampleQuestion] = useState([]);
 
   // 問題インデックスの管理
@@ -110,9 +150,9 @@ const InGame = () => {
 
   const [gameEnded, setGameEnded] = useState(false);  // ゲーム終了状態のフラグ
 
-   // 文字を一文字ずつ表示
+   // 文字を一文字ず表示
    useEffect(() => {
-    if (!isPaused) {
+    if (!isPaused && currentQuestion && currentQuestion.questionText) {
       displayTextTimerRef.current = setInterval(() => {
         setDisplayText((prev) => {
           const nextIndex = prev.length;
@@ -124,12 +164,10 @@ const InGame = () => {
           }
         });
       }, 90);
-    } else {
-      clearInterval(displayTextTimerRef.current);  // isPausedがtrueの場合は停止
     }
     
     return () => clearInterval(displayTextTimerRef.current);
-  }, [isPaused, currentQuestion.questionText]);
+  }, [isPaused, currentQuestion]);
   
 
   
@@ -147,7 +185,7 @@ const InGame = () => {
     return () => clearInterval(timerIntervalRef.current);
   }, [displayText, currentQuestion.questionText, isPaused]);
 
-  // 問題のタイマーを監視し、0になったら次の問題へ移行
+  // 問題のタイマーを監視し0になったら次の問題へ移行
   useEffect(() => {
     if (timeLeft === 0) {
       nextQuestion();
@@ -166,7 +204,7 @@ const InGame = () => {
         setAnswers({playerA: false, playerB: false});
       }, 2000);
     } else {
-      // 最後の問題だった場合の処理
+      // 最の問題だった場合の処理
       setGameEnded(true);
       setTimeout(() => {
         navigate('/result', { 
@@ -185,54 +223,46 @@ const InGame = () => {
 
   // 早押しボタンがクリックされたときの処理
   const handlePlayerClick = () => {
-    if (currentPhase === 'idle') {
-      setCurrentPhase('playerA'); // プレイヤーA解答中
-      setIsPaused(true);  // タイマーを停止
-      clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
-      clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
-      setAnswerPhase(true); //解答フェーズに移行
-      setShowChoices(true); // 選択肢を表示
-      setAnswerLocked(true);  // 早押しボタンが押されたときにボタンを無効化
+    if (currentPhase === 'idle' && wsRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: 'answer_right',
+        roomId: roomId,
+        playerId: playerId
+      }));
     }
   };
 
 
-  // 解答選択時の処理
+  // 解答選択時の処理を簡略化
   const handleChoiceSelect = (choice) => {
-    setSelectedChoice(choice);  // 選択した解答をセット
-    setShowChoices(false);  // 選択肢を非表示
+    setSelectedChoice(choice);
+    setShowChoices(false);
 
-    // playerAの正誤判定
     const isCorrect = choice === currentQuestion.correctAnswer;
     if (isCorrect) {
       setScoreA(scoreA + 1);
-      handleCorrectClick();  // 正解時に呼ばれる
-
-      // 現在の文字表示タイマーをクリアして再スタート
-      clearInterval(displayTextTimerRef.current);
-
-      displayTextTimerRef.current = setInterval(() => {
-        setDisplayText((prev) => {
-          const nextIndex = prev.length;
-          if (nextIndex < currentQuestion.questionText.length) {
-            return prev + currentQuestion.questionText[nextIndex];
-          } else {
-            // 完全に表示された場合の処理
-            clearInterval(displayTextTimerRef.current); // タイマーをクリア
-            setCurrentPhase('idle');  // 解答フェーズをidleに戻す
-            nextQuestion(); // 次の問題に進む
-            return prev;
-          }
-        });
-      }, 10); // 高速表示の速度
-      
+      handleCorrectClick();
     } else {
       setHpA(hpA - 1);
-      handleIncorrectClick();  // 不正解時に呼ばれる
-      setIsPaused(false);
-      setAnswers({playerA: true});  // 解答権を使用
-      setCurrentPhase('idle');  // 不正解後にフェーズをidleに戻す
+      handleIncorrectClick();
     }
+
+    setIsPaused(false);
+    setAnswerLocked(false);
+    
+    // 問題文を高速表示して次の問題へ
+    clearInterval(displayTextTimerRef.current);
+    displayTextTimerRef.current = setInterval(() => {
+      setDisplayText((prev) => {
+        if (prev.length < currentQuestion.questionText.length) {
+          return currentQuestion.questionText;
+        } else {
+          clearInterval(displayTextTimerRef.current);
+          nextQuestion();
+          return prev;
+        }
+      });
+    }, 10);
   };
 
   // 解答権を管理して対戦状況の管理
@@ -268,7 +298,7 @@ const InGame = () => {
               return prev + currentQuestion.questionText[nextIndex];
             } else {
               // 完全に表示された場合の処理
-              clearInterval(displayTextTimerRef.current); // タイマーをクリア
+              clearInterval(displayTextTimerRef.current); // タイ��ーをクリア
               nextQuestion(); // 次の問題に進む
               return prev;
             }
@@ -453,7 +483,7 @@ const InGame = () => {
           </div>
         </div>
 
-        {/* 早押しボタン、問題の選択肢、解説の表示エリア（早押しボタンが押された問題の選択肢の表示、問題が解れたら、解説の表示） */}
+        {/* 早押しボタン、問題の選択肢、解説の表示エリア（早押しボタンが押された問題の選択の表示、問題が解れたら、解説の表示） */}
         <div className="flex flex-col flex-grow w-full relative items-center">
           {/* 選択肢の表示 */}
           {showChoices && (

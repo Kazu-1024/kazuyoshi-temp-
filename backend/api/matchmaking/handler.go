@@ -55,7 +55,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("見つかったユーザー名ク��キー: %+v\n", cookie)
+	fmt.Printf("見つかったユーザー名クキー: %+v\n", cookie)
 
 	fmt.Printf("WebSocket接続確立: %s\n", cookie.Value)
 
@@ -126,73 +126,66 @@ func generateRoomID() string {
 
 func handleGameSession(room *Room) {
 	// 問題を一括で取得
-	questions, err := fetchQuestions(5) // 5問取得
+	questions, err := fetchQuestions(5)
 	if err != nil {
 		log.Printf("問題取得エラー: %v", err)
 		return
 	}
 
-	log.Printf("取得した問題: %+v", questions) // デバッグ用ログ追加
-
-	// ゲーム開始メッセージと問題データを一緒に送信
+	// ゲーム開始メッセージと問題データを送信
 	startMessage := map[string]interface{}{
 		"status":    "game_start",
 		"message":   "対戦を開始します",
 		"questions": questions,
 	}
 
-	// Player1への送信
-	if err := room.Player1Conn.WriteJSON(startMessage); err != nil {
-		log.Printf("Player1へのゲーム開始メッセージ送信エラー: %v", err)
-		return
-	}
+	room.Player1Conn.WriteJSON(startMessage)
+	room.Player2Conn.WriteJSON(startMessage)
 
-	// Player2への送信
-	if err := room.Player2Conn.WriteJSON(startMessage); err != nil {
-		log.Printf("Player2へのゲーム開始メッセージ送信エラー: %v", err)
-		return
-	}
+	// 早押し処理用のチャネル
+	answerRights := make(chan string, 1)
 
-	log.Printf("ゲーム開始メッセージを送信しました: %+v", startMessage) // デバッグ用ログ追加
+	// 各プレイヤーの早押しメッセージを監視
+	go handleAnswerRequest(room.Player1Conn, room.PlayerID, answerRights)
+	go handleAnswerRequest(room.Player2Conn, room.Player2ID, answerRights)
+
+	// メインゲームループ
+	for {
+		select {
+		case playerID := <-answerRights:
+			// 早押し成功通知を両プレイヤーに送信
+			answerMessage := map[string]interface{}{
+				"status":   "answer_given",
+				"playerId": playerID,
+			}
+			room.Player1Conn.WriteJSON(answerMessage)
+			room.Player2Conn.WriteJSON(answerMessage)
+		}
+	}
 }
 
 func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights chan<- string) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("handleAnswerRequest でパニック発生: %v", r)
-		}
-	}()
-
 	for {
 		var message map[string]interface{}
 		err := conn.ReadJSON(&message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("予期せぬ接続切断: %v", err)
-			} else {
-				log.Printf("メッセージ読み取りエラー: %v", err)
 			}
 			return
 		}
 
-		log.Printf("受信したメッセージ: %+v", message)
-
-		if message["type"] == "answer_request" {
+		if message["type"] == "answer_right" {
 			select {
 			case answerRights <- playerID:
+				// 早押し成功
 				log.Printf("プレイヤー %s が回答権を獲得", playerID)
-				// 回答権獲得の通知は handleGameSession で行うため、ここでは即座に return
-				return
 			default:
 				// 他のプレイヤーが既に回答権を取得している
-				err := conn.WriteJSON(map[string]string{
+				conn.WriteJSON(map[string]string{
 					"status":  "answer_denied",
 					"message": "他のプレイヤーが回答中です",
 				})
-				if err != nil {
-					log.Printf("回答権否メッセージ送信エラー: %v", err)
-					return
-				}
 			}
 		}
 	}

@@ -40,7 +40,8 @@ const MatchLoading = () => {
       navigate('/ingame', { 
         state: { 
           roomId: roomId,
-          opponentRate: userRate // 仮の対戦相手のレート（後で実際の値に置き換え）
+          ws: location.state?.ws,
+          opponentRate: userRate
         }
       });
     }, 2000);

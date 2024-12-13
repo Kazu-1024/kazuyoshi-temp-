@@ -33,7 +33,11 @@ const Home = () => {
           </button>
         </div>
         <div className="absolute bottom-20 left-2 mb-2">
-          <buton onClick=""><img src={HelpCircle} className="w-10 h-10"/></buton>
+          <button onClick={() => {
+            console.log('ヘルプボタンがクリックされました');
+          }}>
+            <img src={HelpCircle} className="w-10 h-10" alt="Help" />
+          </button>
         </div>
       </div>
     </>
