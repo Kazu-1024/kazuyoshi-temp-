@@ -86,6 +86,10 @@ const InGame = () => {
             setIsPaused(true);
             setAnswerLocked(true);
           }
+        } else if (data.status === 'answer_unlock') {
+          console.log('answer_unlock case に入りました');
+          setIsPaused(false);
+          setAnswerLocked(false);
         }
       } catch (error) {
         console.error('WebSocketメッセージの処理中にエラー:', error);
@@ -221,7 +225,7 @@ const InGame = () => {
   };
   
 
-  // 早押しボタンがクリックされたときの処理
+  // 早押しボタンがクリッ��されたときの処理
   const handlePlayerClick = () => {
     if (currentPhase === 'idle' && wsRef.current) {
       wsRef.current.send(JSON.stringify({
@@ -245,6 +249,17 @@ const InGame = () => {
     } else {
       setHpA(hpA - 1);
       handleIncorrectClick();
+    }
+
+    // 誤答の場合、answer_unlockを送信
+    if (wsRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: 'answer_result',
+        roomId: roomId,
+        playerId: playerId,
+        answer: choice,
+        correct: isCorrect
+      }));
     }
 
     setIsPaused(false);
@@ -298,7 +313,7 @@ const InGame = () => {
               return prev + currentQuestion.questionText[nextIndex];
             } else {
               // 完全に表示された場合の処理
-              clearInterval(displayTextTimerRef.current); // タイ��ーをクリア
+              clearInterval(displayTextTimerRef.current); // タイマーをクリア
               nextQuestion(); // 次の問題に進む
               return prev;
             }

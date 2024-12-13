@@ -160,6 +160,18 @@ func handleGameSession(room *Room) {
 			}
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)
+
+			// プレイヤーの回答を処理
+			isCorrect := handlePlayerAnswer(room, playerID, questions[0].CorrectAnswer) // questions[0] は現在の問題と仮定
+
+			// 誤答の場合、answer_unlockを送信
+			if !isCorrect {
+				unlockMessage := map[string]interface{}{
+					"status": "answer_unlock",
+				}
+				room.Player1Conn.WriteJSON(unlockMessage)
+				room.Player2Conn.WriteJSON(unlockMessage)
+			}
 		}
 	}
 }
@@ -216,6 +228,8 @@ func handlePlayerAnswer(room *Room, playerID string, correctAnswer string) bool 
 			answerChan <- answer["answer"]
 		} else {
 			log.Printf("回答受信エラー: %v", err)
+			// エラー発生時もanswerChanに空文字列を送信して、select文をブロック解除
+			answerChan <- ""
 		}
 	}()
 
