@@ -133,7 +133,7 @@ const InGame = () => {
   
 
   
-  const intervalTime = 10; //プログレスバーの進む速さ
+  const intervalTime = 50; //プログレスバーの進む速さ
   // 問題のタイマー
   useEffect(() => {
     if (displayText === currentQuestion.questionText && !isPaused) {
@@ -183,7 +183,7 @@ const InGame = () => {
   };
   
 
-  // 早押しボタンがクリックされたときの処理(自分側)
+  // 早押しボタンがクリックされたときの処理
   const handlePlayerClick = () => {
     if (currentPhase === 'idle') {
       setCurrentPhase('playerA'); // プレイヤーA解答中
