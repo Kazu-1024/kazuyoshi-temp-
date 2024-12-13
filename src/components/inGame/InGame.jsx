@@ -35,66 +35,93 @@ const InGame = () => {
       return;
     }
 
-    // 既存のWebSocket接続があれば使用し、なければ新規作成
-    if (existingWs) {
-      console.log('既存のWebSocket接続を使用します');
-      wsRef.current = existingWs;
-    } else {
-      console.log('新規WebSocket接続を作成します');
-      const ws = new WebSocket('ws://localhost:8080/matchmaking');
-      wsRef.current = ws;
-      
+    let ws;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const reconnectInterval = 3000; // 3秒
+
+    const connect = () => {
+      if (existingWs) {
+        console.log('既存のWebSocket接続を使用します');
+        ws = existingWs;
+        wsRef.current = existingWs;
+      } else {
+        console.log('新規WebSocket接続を作成します');
+        ws = new WebSocket('ws://localhost:8080/matchmaking');
+        wsRef.current = ws;
+      }
+
       ws.onopen = () => {
         console.log('WebSocket接続が確立されました');
+        reconnectAttempts = 0; // 接続成功時にリセット
         ws.send(JSON.stringify({
           type: 'game_start',
           roomId: roomId,
           playerId: playerId
         }));
       };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('受信したメッセージの詳細:', data);
+
+          if (data.status === 'game_start' && data.questions) {
+            console.log('問題データを受信:', data.questions);
+            // 問題データのフォーマットを修正
+            const formattedQuestions = data.questions.map(q => ({
+              id: q.id,
+              questionText: q.question_text || '',
+              choices: q.choices || [],
+              correctAnswer: q.correct_answer || ''
+            }));
+            
+            setSampleQuestion(formattedQuestions);
+            if (formattedQuestions.length > 0) {
+              setCurrentQuestion(formattedQuestions[0]);
+            }
+          } else if (data.status === 'answer_given') {
+            console.log('answer_given case に入りました');
+            const answeredPlayerId = data.playerId;
+            
+            if (answeredPlayerId === playerId) {
+              setIsPaused(true);
+              setShowChoices(true);
+              setAnswerLocked(true);
+            } else {
+              setIsPaused(true);
+              setAnswerLocked(true);
+            }
+          } else if (data.status === 'answer_unlock') {
+            console.log('answer_unlock case に入りました');
+            setIsPaused(false);
+            setAnswerLocked(false);
+          }
+        } catch (error) {
+          console.error('WebSocketメッセージの処理中にエラー:', error);
+        }
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket接続が閉じられました:', event);
+        if (reconnectAttempts < maxReconnectAttempts) {
+          setTimeout(() => {
+            console.log('WebSocket再接続を試みます...');
+            reconnectAttempts++;
+            connect();
+          }, reconnectInterval);
+        } else {
+          console.log('最大再接続回数に達しました');
+          // 必要に応じてエラー処理やユーザーへの通知を行う
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocketエラー:', error);
+      };
     }
 
-    // メッセージハンドラーの設定
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('受信したメッセージの詳細:', data);
-
-        if (data.status === 'game_start' && data.questions) {
-          console.log('問題データを受信:', data.questions);
-          // 問題データのフォーマットを修正
-          const formattedQuestions = data.questions.map(q => ({
-            id: q.id,
-            questionText: q.question_text || '',
-            choices: q.choices || [],
-            correctAnswer: q.correct_answer || ''
-          }));
-          
-          setSampleQuestion(formattedQuestions);
-          if (formattedQuestions.length > 0) {
-            setCurrentQuestion(formattedQuestions[0]);
-          }
-        } else if (data.status === 'answer_given') {
-          console.log('answer_given case に入りました');
-          const answeredPlayerId = data.playerId;
-          
-          if (answeredPlayerId === playerId) {
-            setIsPaused(true);
-            setShowChoices(true);
-            setAnswerLocked(true);
-          } else {
-            setIsPaused(true);
-            setAnswerLocked(true);
-          }
-        } else if (data.status === 'answer_unlock') {
-          console.log('answer_unlock case に入りました');
-          setIsPaused(false);
-          setAnswerLocked(false);
-        }
-      } catch (error) {
-        console.error('WebSocketメッセージの処理中にエラー:', error);
-      }
-    };
+    connect();
 
     return () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -225,7 +252,7 @@ const InGame = () => {
   };
   
 
-  // 早押しボタンがクリッ��されたときの処理
+  // 早押しボタンがクリッれたときの処理
   const handlePlayerClick = () => {
     if (currentPhase === 'idle' && wsRef.current) {
       wsRef.current.send(JSON.stringify({
@@ -312,7 +339,7 @@ const InGame = () => {
             if (nextIndex < currentQuestion.questionText.length) {
               return prev + currentQuestion.questionText[nextIndex];
             } else {
-              // 完全に表示された場合の処理
+              // ���全に表示された場合の処理
               clearInterval(displayTextTimerRef.current); // タイマーをクリア
               nextQuestion(); // 次の問題に進む
               return prev;

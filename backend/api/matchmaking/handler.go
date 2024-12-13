@@ -161,8 +161,25 @@ func handleGameSession(room *Room) {
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)
 
-			// プレイヤーの回答を処理
-			isCorrect := handlePlayerAnswer(room, playerID, questions[0].CorrectAnswer) // questions[0] は現在の問題と仮定
+			// プレイヤーの回答を待機
+			var answerResult map[string]interface{}
+			var answeredConn *websocket.Conn
+			if playerID == room.PlayerID {
+				answeredConn = room.Player1Conn
+			} else {
+				answeredConn = room.Player2Conn
+			}
+			err := answeredConn.ReadJSON(&answerResult)
+			if err != nil {
+				log.Printf("回答受信エラー: %v", err)
+				continue
+			}
+
+			// 受信した回答結果をログに出力
+			log.Printf("受信した回答結果: %+v", answerResult)
+
+			// 回答結果を処理
+			isCorrect := answerResult["correct"].(bool)
 
 			// 誤答の場合、answer_unlockを送信
 			if !isCorrect {
@@ -200,66 +217,6 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 				})
 			}
 		}
-	}
-}
-
-func handlePlayerAnswer(room *Room, playerID string, correctAnswer string) bool {
-	log.Printf("プレイヤー %s の回答を待機中", playerID)
-
-	var conn *websocket.Conn
-	var otherConn *websocket.Conn
-
-	if playerID == room.PlayerID {
-		conn = room.Player1Conn
-		otherConn = room.Player2Conn
-	} else {
-		conn = room.Player2Conn
-		otherConn = room.Player1Conn
-	}
-
-	// 回答を待機
-	answerTimeout := time.After(5 * time.Second)
-	answerChan := make(chan string)
-
-	go func() {
-		var answer map[string]string
-		if err := conn.ReadJSON(&answer); err == nil {
-			log.Printf("回答を受信: %+v", answer)
-			answerChan <- answer["answer"]
-		} else {
-			log.Printf("回答受信エラー: %v", err)
-			// エラー発生時もanswerChanに空文字列を送信して、select文をブロック解除
-			answerChan <- ""
-		}
-	}()
-
-	select {
-	case answer := <-answerChan:
-		isCorrect := answer == correctAnswer
-		log.Printf("回答結果: %v (正解: %s, 回答: %s)", isCorrect, correctAnswer, answer)
-
-		resultMessage := map[string]interface{}{
-			"status":         "answer_result",
-			"correct":        isCorrect,
-			"answer":         answer,
-			"correct_answer": correctAnswer,
-		}
-		conn.WriteJSON(resultMessage)
-		otherConn.WriteJSON(resultMessage)
-		return isCorrect
-
-	case <-answerTimeout:
-		log.Printf("回答時間切れ")
-		// タイムアウトメッセージを変更
-		timeoutMessage := map[string]interface{}{
-			"status":         "answer_result",
-			"correct":        false,
-			"answer":         "時間切れ",
-			"correct_answer": correctAnswer,
-		}
-		conn.WriteJSON(timeoutMessage)
-		otherConn.WriteJSON(timeoutMessage)
-		return false
 	}
 }
 
@@ -321,7 +278,7 @@ func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 		return // 引き分けの場合はレーティング更新なし
 	}
 
-	// レート更新のリクエストを作成
+	// レート更新のリク���ストを作成
 	rateRequest := rate.RatingRequest{
 		WinnerID: winnerID,
 		LoserID:  loserID,
