@@ -221,8 +221,8 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 }
 
 func waitForMatch(room *Room) bool {
-	// タイムアウト時間を30秒に延長
-	ticker := time.NewTicker(30 * time.Second)
+	// タイムアウト時間を300秒に延長
+	ticker := time.NewTicker(300 * time.Second)
 	defer ticker.Stop()
 
 	for {
