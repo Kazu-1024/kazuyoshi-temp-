@@ -235,54 +235,6 @@ const InGame = () => {
     }
   };
 
-  // 対戦相手がボタンを押したら（一応）
-  const handleOpponentClick = () => {
-    if (currentPhase === 'idle') {
-      setCurrentPhase('playerB'); // 相手の解答フェース
-      setIsPaused(true);  // タイマーを停止
-      clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
-      clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
-      setAnswerLocked(true);  // 自分側の早押しボタンを押せなくする
-      handleOpponentAnswer(); // 対戦相手の解答処理の呼び出し
-    }
-  };
-
-  // 対戦相手の解答処理(デバッグに使った)
-  const handleOpponentAnswer = () => {
-   // シミュレーション用: ランダムで正解/不正解を生成
-    const isCorrect = Math.random() > 0.5; // 50%の確率で正解
-
-    setTimeout(() => {
-      if (isCorrect) {
-        setScoreB(scoreB + 1);
-        handleCorrectClick(); // 正解時の処理（アニメーション）
-        // 現在の文字表示タイマーをクリアして再スタート
-        clearInterval(displayTextTimerRef.current);
-
-        displayTextTimerRef.current = setInterval(() => {
-          setDisplayText((prev) => {
-            const nextIndex = prev.length;
-            if (nextIndex < currentQuestion.questionText.length) {
-              return prev + currentQuestion.questionText[nextIndex];
-            } else {
-              // 完全に表示された場合の処理
-              clearInterval(displayTextTimerRef.current); // タイマーをクリア
-              setTimeout(nextQuestion, 2000); // 次の問題へ
-              return prev;
-            }
-          });
-        }, 10); // 高速表示の速度
-      } else {
-        setHpB(hpB - 1);
-        handleIncorrectClick(); // 不正解時の処理（アニメーション）
-        setAnswers({playerB: true});  // 解答権を使用
-        setIsPaused(false); // タイマー再開
-      }
-      setCurrentPhase('idle'); // フェーズをリセット
-      setAnswerLocked(false); // プレイヤーの早押しボタンを再度有効化
-    }, 2000); // 解答選択にかかる時間をシミュレート
-  };
-
   // 解答権を管理して対戦状況の管理
   useEffect(() => {
     //　体力が0になったプレイヤーがいたら対戦を狩猟
