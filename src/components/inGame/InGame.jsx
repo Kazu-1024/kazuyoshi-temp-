@@ -96,25 +96,15 @@ const InGame = () => {
             console.log('answer_unlock case に入りました');
             setIsPaused(false);
             setAnswerLocked(false);
+          } else if (data.status === 'next_question') {
+            console.log('next_question case に入りました');
+            nextQuestion();
           }
         } catch (error) {
           console.error('WebSocketメッセージの処理中にエラー:', error);
         }
       };
 
-      ws.onclose = (event) => {
-        console.log('WebSocket接続が閉じられました:', event);
-        if (reconnectAttempts < maxReconnectAttempts) {
-          setTimeout(() => {
-            console.log('WebSocket再接続を試みます...');
-            reconnectAttempts++;
-            connect();
-          }, reconnectInterval);
-        } else {
-          console.log('最大再接続回数に達しました');
-          // 必要に応じてエラー処理やユーザーへの通知を行う
-        }
-      };
 
       ws.onerror = (error) => {
         console.error('WebSocketエラー:', error);
@@ -150,6 +140,12 @@ const InGame = () => {
   // 問題文の表示用
   const [displayText, setDisplayText] = useState("");
 
+  // 問題文の表示が開始されたかどうかを示すstate
+  const [isQuestionStarted, setIsQuestionStarted] = useState(false);
+
+  // 問題文がすべて表示されたかどうかを示すstate
+  const [isQuestionFullyDisplayed, setIsQuestionFullyDisplayed] = useState(false);
+
   // サンプル問題データ
   const [sampleQuestion, setSampleQuestion] = useState([]);
 
@@ -184,19 +180,24 @@ const InGame = () => {
    // 文字を一文字ず表示
    useEffect(() => {
     if (!isPaused && currentQuestion && currentQuestion.questionText) {
+      // 問題文の表���が開始されたことを示すstateをtrueに設定
+      setIsQuestionStarted(true);
+
       displayTextTimerRef.current = setInterval(() => {
         setDisplayText((prev) => {
           const nextIndex = prev.length;
           if (nextIndex < currentQuestion.questionText.length) {
             return prev + currentQuestion.questionText[nextIndex];
           } else {
+            // 問題文がすべて表示されたことを示すstateをtrueに設定
+            setIsQuestionFullyDisplayed(true);
             clearInterval(displayTextTimerRef.current);
             return prev;
           }
         });
       }, 90);
     }
-    
+
     return () => clearInterval(displayTextTimerRef.current);
   }, [isPaused, currentQuestion]);
   
@@ -205,16 +206,17 @@ const InGame = () => {
   const intervalTime = 50; //プログレスバーの進む速さ
   // 問題のタイマー
   useEffect(() => {
-    if (displayText === currentQuestion.questionText && !isPaused) {
+    // 問題文がすべて表示された場合のみカウントダウンを開始
+    if (isQuestionFullyDisplayed && !isPaused) {
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => (prevTime <= 0 ? 0 : prevTime - 1));
       }, intervalTime);
     } else {
-      clearInterval(timerIntervalRef.current);  // isPausedがtrueの場合は停止
+      clearInterval(timerIntervalRef.current);
     }
-  
+
     return () => clearInterval(timerIntervalRef.current);
-  }, [displayText, currentQuestion.questionText, isPaused]);
+  }, [isQuestionFullyDisplayed, isPaused]);
 
   // 問題のタイマーを監視し0になったら次の問題へ移行
   useEffect(() => {
@@ -294,17 +296,7 @@ const InGame = () => {
     
     // 問題文を高速表示して次の問題へ
     clearInterval(displayTextTimerRef.current);
-    displayTextTimerRef.current = setInterval(() => {
-      setDisplayText((prev) => {
-        if (prev.length < currentQuestion.questionText.length) {
-          return currentQuestion.questionText;
-        } else {
-          clearInterval(displayTextTimerRef.current);
-          nextQuestion();
-          return prev;
-        }
-      });
-    }, 10);
+    setDisplayText(currentQuestion.questionText);
   };
 
   // 解答権を管理して対戦状況の管理
@@ -339,7 +331,7 @@ const InGame = () => {
             if (nextIndex < currentQuestion.questionText.length) {
               return prev + currentQuestion.questionText[nextIndex];
             } else {
-              // ���全に表示された場合の処理
+              // 全に表示された場合の処理
               clearInterval(displayTextTimerRef.current); // タイマーをクリア
               nextQuestion(); // 次の問題に進む
               return prev;
@@ -362,8 +354,10 @@ const InGame = () => {
     if (currentQuestionIndex < sampleQuestion.length) {
       setCurrentQuestion(sampleQuestion[currentQuestionIndex]);
       setSelectedChoice(null); // 前回の選択肢をリセット
-      setAnswerLocked(false); // 早押しボタン再度有効に
+      setAnswerLocked(false); // 早押しボタンを再度有効に
       setDisplayText(""); // 問題文のテキストをリセット
+      setIsQuestionStarted(false); // 問題文の表示が開始されたことを示すstateをリセット
+      setIsQuestionFullyDisplayed(false); // 問題文がすべて表示されたことを示すstateをリセット
     }
   }, [currentQuestionIndex, sampleQuestion]);
 

@@ -142,17 +142,85 @@ func handleGameSession(room *Room) {
 	room.Player1Conn.WriteJSON(startMessage)
 	room.Player2Conn.WriteJSON(startMessage)
 
-	// 早押し処理用のチャネル
-	answerRights := make(chan string, 1)
-
-	// 各プレイヤーの早押しメッセージを監視
-	go handleAnswerRequest(room.Player1Conn, room.PlayerID, answerRights)
-	go handleAnswerRequest(room.Player2Conn, room.Player2ID, answerRights)
+	// 各プレイヤーのメッセージを監視
+	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
+	go handlePlayerMessages(room.Player2Conn, room.Player2ID, room)
 
 	// メインゲームループ
 	for {
-		select {
-		case playerID := <-answerRights:
+		// select {
+		// case playerID := <-answerRights:
+		// 	// 早押し成功通知を両プレイヤーに送信
+		// 	answerMessage := map[string]interface{}{
+		// 		"status":   "answer_given",
+		// 		"playerId": playerID,
+		// 	}
+		// 	room.Player1Conn.WriteJSON(answerMessage)
+		// 	room.Player2Conn.WriteJSON(answerMessage)
+
+		// 	// プレイヤーの回答を待機
+		// 	var answerResult map[string]interface{}
+		// 	var answeredConn *websocket.Conn
+		// 	if playerID == room.PlayerID {
+		// 		answeredConn = room.Player1Conn
+		// 	} else {
+		// 		answeredConn = room.Player2Conn
+		// 	}
+
+		// 	// 接続を維持したまま、回答結果を読み取る
+		// 	if answeredConn != nil {
+		// 		err := answeredConn.ReadJSON(&answerResult)
+		// 		if err != nil {
+		// 			log.Printf("回答受信エラー: %v", err)
+		// 			// エラーが発生した場合、answer_unlockを送信してループを継続
+		// 			unlockMessage := map[string]interface{}{
+		// 				"status": "answer_unlock",
+		// 			}
+		// 			room.Player1Conn.WriteJSON(unlockMessage)
+		// 			room.Player2Conn.WriteJSON(unlockMessage)
+		// 			continue
+		// 		}
+		// 	}
+
+		// 	// 受信した回答結果をログに出力
+		// 	log.Printf("受信した回答結果: %+v", answerResult)
+
+		// 	// 回答結果を処理
+		// 	isCorrect := answerResult["correct"].(bool)
+
+		// 	// 誤答の場合、answer_unlockを送信
+		// 	if !isCorrect {
+		// 		unlockMessage := map[string]interface{}{
+		// 			"status": "answer_unlock",
+		// 		}
+		// 		room.Player1Conn.WriteJSON(unlockMessage)
+		// 		room.Player2Conn.WriteJSON(unlockMessage)
+		// 	}
+		// 	// 正解の場合 next_questionをおくる
+		// 	if isCorrect {
+		// 		nextQuestionMessage := map[string]interface{}{
+		// 			"status": "next_question",
+		// 		}
+		// 		room.Player1Conn.WriteJSON(nextQuestionMessage)
+		// 		room.Player2Conn.WriteJSON(nextQuestionMessage)
+		// 	}
+		// }
+	}
+}
+
+func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
+	for {
+		var message map[string]interface{}
+		err := conn.ReadJSON(&message)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("予期せぬ接続切断: %v", err)
+			}
+			// エラーが発生した場合でも、接続を閉じずにループを継続
+			return
+		}
+
+		if message["type"] == "answer_right" {
 			// 早押し成功通知を両プレイヤーに送信
 			answerMessage := map[string]interface{}{
 				"status":   "answer_given",
@@ -163,15 +231,17 @@ func handleGameSession(room *Room) {
 
 			// プレイヤーの回答を待機
 			var answerResult map[string]interface{}
-			var answeredConn *websocket.Conn
-			if playerID == room.PlayerID {
-				answeredConn = room.Player1Conn
-			} else {
-				answeredConn = room.Player2Conn
-			}
-			err := answeredConn.ReadJSON(&answerResult)
+
+			// 接続を維持したまま、回答結果を読み取る
+			err := conn.ReadJSON(&answerResult)
 			if err != nil {
 				log.Printf("回答受信エラー: %v", err)
+				// エラーが発生した場合、answer_unlockを送信してループを継続
+				unlockMessage := map[string]interface{}{
+					"status": "answer_unlock",
+				}
+				room.Player1Conn.WriteJSON(unlockMessage)
+				room.Player2Conn.WriteJSON(unlockMessage)
 				continue
 			}
 
@@ -189,32 +259,13 @@ func handleGameSession(room *Room) {
 				room.Player1Conn.WriteJSON(unlockMessage)
 				room.Player2Conn.WriteJSON(unlockMessage)
 			}
-		}
-	}
-}
-
-func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights chan<- string) {
-	for {
-		var message map[string]interface{}
-		err := conn.ReadJSON(&message)
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("予期せぬ接続切断: %v", err)
-			}
-			return
-		}
-
-		if message["type"] == "answer_right" {
-			select {
-			case answerRights <- playerID:
-				// 早押し成功
-				log.Printf("プレイヤー %s が回答権を獲得", playerID)
-			default:
-				// 他のプレイヤーが既に回答権を取得している
-				conn.WriteJSON(map[string]string{
-					"status":  "answer_denied",
-					"message": "他のプレイヤーが回答中です",
-				})
+			// 正解の場合 next_questionをおくる
+			if isCorrect {
+				nextQuestionMessage := map[string]interface{}{
+					"status": "next_question",
+				}
+				room.Player1Conn.WriteJSON(nextQuestionMessage)
+				room.Player2Conn.WriteJSON(nextQuestionMessage)
 			}
 		}
 	}
@@ -278,7 +329,7 @@ func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 		return // 引き分けの場合はレーティング更新なし
 	}
 
-	// レート更新のリク���ストを作成
+	// レート更新のリクエストを作成
 	rateRequest := rate.RatingRequest{
 		WinnerID: winnerID,
 		LoserID:  loserID,
