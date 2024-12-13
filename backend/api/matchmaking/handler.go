@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -54,7 +55,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("見つかったユーザー名クッキー: %+v\n", cookie)
+	fmt.Printf("見つかったユーザー名ク��キー: %+v\n", cookie)
 
 	fmt.Printf("WebSocket接続確立: %s\n", cookie.Value)
 
@@ -189,7 +190,7 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 					"message": "他のプレイヤーが回答中です",
 				})
 				if err != nil {
-					log.Printf("回答権��否メッセージ送信エラー: %v", err)
+					log.Printf("回答権否メッセージ送信エラー: %v", err)
 					return
 				}
 			}
@@ -347,23 +348,44 @@ func InitDB(database *sql.DB) {
 
 // 問題を一括取得する関数を追加
 func fetchQuestions(count int) ([]Question, error) {
-	questions := make([]Question, 0, count)
-
-	rows, err := db.Query(`
-		SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
-		FROM questions 
-		ORDER BY RAND() 
-		LIMIT ?
-	`, count)
+	// まず全ての問題IDを取得
+	var questionIDs []int
+	rows, err := db.Query("SELECT id FROM questions")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		questionIDs = append(questionIDs, id)
+	}
+
+	// ランダムにcount個のIDを選択
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(questionIDs), func(i, j int) {
+		questionIDs[i], questionIDs[j] = questionIDs[j], questionIDs[i]
+	})
+
+	// 選択したcount個の問題を取得
+	selectedIDs := questionIDs
+	if len(questionIDs) > count {
+		selectedIDs = questionIDs[:count]
+	}
+
+	// 選択した問題の詳細を取得
+	questions := make([]Question, 0, len(selectedIDs))
+	for _, id := range selectedIDs {
 		var q Question
 		var choice1, choice2, choice3, choice4 string
-		err := rows.Scan(
+		err := db.QueryRow(`
+			SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
+			FROM questions 
+			WHERE id = ?
+		`, id).Scan(
 			&q.ID,
 			&q.QuestionText,
 			&q.CorrectAnswer,
@@ -375,9 +397,7 @@ func fetchQuestions(count int) ([]Question, error) {
 		if err != nil {
 			return nil, err
 		}
-		// 配列をスライスに変換して代入
-		choices := []string{choice1, choice2, choice3, choice4}
-		q.Choices = choices
+		q.Choices = []string{choice1, choice2, choice3, choice4}
 		questions = append(questions, q)
 	}
 

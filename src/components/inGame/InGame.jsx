@@ -42,16 +42,6 @@ const InGame = () => {
             }
           }
           break;
-        case 'game_end':
-          // ゲーム終了時の処理
-          navigate('/result', { 
-            state: { 
-              result: data.result,
-              finalScoreA: scoreA,
-              finalScoreB: scoreB
-            } 
-          });
-          break;
         default:
           console.log('未処理のメッセージタイプ:', data.status);
       }
@@ -89,7 +79,7 @@ const InGame = () => {
   // 問題文の表示用
   const [displayText, setDisplayText] = useState("");
 
-  // サンプル問題のデータ
+  // サンプル問題のデ���タ
   const [sampleQuestion, setSampleQuestion] = useState([]);
 
   // 問題インデックスの管理
@@ -143,12 +133,13 @@ const InGame = () => {
   
 
   
+  const intervalTime = 10; //プログレスバーの進む速さ
   // 問題のタイマー
   useEffect(() => {
     if (displayText === currentQuestion.questionText && !isPaused) {
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => (prevTime <= 0 ? 0 : prevTime - 1));
-      }, 150);  // 現在は20秒
+      }, intervalTime);
     } else {
       clearInterval(timerIntervalRef.current);  // isPausedがtrueの場合は停止
     }
@@ -164,21 +155,30 @@ const InGame = () => {
   }, [timeLeft]);
 
   const nextQuestion = () => {
-    if (gameEnded) return; // 対戦が終了していたら次の問題に行かないようにする
+    if (gameEnded) return;
 
     if (currentQuestionIndex + 1 < sampleQuestion.length) {
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
-        setTimeLeft(100); // 残り時間をリセット
-        setAnswerLocked(false); // 次の問題に進むときに早押しボタンのロックを解除
-        setIsPaused(false); // タイマーを再開
+        setTimeLeft(100);
+        setAnswerLocked(false);
+        setIsPaused(false);
         setAnswers({playerA: false, playerB: false});
-      }, 2000); // 1000ミリ秒の遅延
+      }, 2000);
     } else {
       // 最後の問題だった場合の処理
+      setGameEnded(true);
       setTimeout(() => {
-        handleGameEnd();
-      }, 5000);
+        navigate('/result', { 
+          state: { 
+            result: {
+              winner: scoreA > scoreB ? 'playerA' : 'playerB',
+              scoreA: scoreA,
+              scoreB: scoreB
+            }
+          } 
+        });
+      }, 2000);
     }
   };
   
@@ -187,7 +187,7 @@ const InGame = () => {
   const handlePlayerClick = () => {
     if (currentPhase === 'idle') {
       setCurrentPhase('playerA'); // プレイヤーA解答中
-      setIsPaused(true);  // ���イマーを停止
+      setIsPaused(true);  // タイマーを停止
       clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
       clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
       setAnswerPhase(true); //解答フェーズに移行
@@ -218,7 +218,7 @@ const InGame = () => {
             return prev + currentQuestion.questionText[nextIndex];
           } else {
             // 完全に表示された場合の処理
-            clearInterval(displayTextTimerRef.current); // タイマ��をクリア
+            clearInterval(displayTextTimerRef.current); // タイマーをクリア
             setCurrentPhase('idle');  // 解答フェーズをidleに戻す
             nextQuestion(); // 次の問題に進む
             return prev;
@@ -419,7 +419,7 @@ const InGame = () => {
           } else {
             // 完全に表示された場合の処理
             clearInterval(displayTextTimerRef.current); // タイマーをクリア
-            navigate('/Result');
+            navigate('/result');
             return prev;
           }
         });
