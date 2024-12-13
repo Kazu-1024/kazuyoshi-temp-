@@ -32,9 +32,10 @@ type GameState struct {
 	Status    string // "waiting", "matched", "playing", "finished" など
 }
 
+// Question ゲームの問題を管理する構造体
 type Question struct {
-	ID            int       `json:"id"`
-	QuestionText  string    `json:"question_text"`
-	CorrectAnswer string    `json:"correct_answer"`
-	Choices       [4]string `json:"choices"`
+	ID            int      `json:"id"`
+	QuestionText  string   `json:"question_text"`
+	Choices       []string `json:"choices"`
+	CorrectAnswer string   `json:"correct_answer"`
 }

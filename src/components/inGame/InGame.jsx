@@ -13,50 +13,61 @@ const InGame = () => {
   const roomId = location.state?.roomId;
   
   // WebSocket接続の確立
-  // useEffect(() => {
-  //   if (!roomId) {
-  //     navigate('/');
-  //     return;
-  //   }
+  useEffect(() => {
+    if (!roomId) {
+      navigate('/');
+      return;
+    }
 
-  //   const ws = new WebSocket('ws://localhost:8080/matchmaking');
+    const ws = new WebSocket('ws://localhost:8080/matchmaking');
 
-  //   ws.onmessage = (event) => {
-  //     const data = JSON.parse(event.data);
-  //     console.log('受信したメッセージ:', data);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('受信したメッセージ:', data);
 
-  //     switch (data.status) {
-  //       case 'question':
-  //         // 問題データを受け取った時の処理
-  //         // 既存のsampleQuestionの代わりにサーバーから受け取った問題を使用
-  //         setCurrentQuestion(data.question);
-  //         break;
-  //       case 'game_end':
-  //         // ゲーム終了時の処理
-  //         navigate('/result', { 
-  //           state: { 
-  //             result: data.result,
-  //             finalScoreA: scoreA,
-  //             finalScoreB: scoreB
-  //           } 
-  //         });
-  //         break;
-  //       default:
-  //         console.log('未処理のメッセージタイプ:', data.status);
-  //     }
-  //   };
+      switch (data.status) {
+        case 'game_start':
+          // 問題データを受け取った時の処理
+          if (data.questions && Array.isArray(data.questions)) {
+            const formattedQuestions = data.questions.map(q => ({
+              id: q.id,
+              questionText: q.question_text,
+              choices: Array.isArray(q.choices) ? q.choices : [],
+              correctAnswer: q.correct_answer,
+            }));
+            console.log('フォーマット後の問題データ:', formattedQuestions);
+            setSampleQuestion(formattedQuestions);
+            if (formattedQuestions.length > 0) {
+              setCurrentQuestion(formattedQuestions[0]);
+            }
+          }
+          break;
+        case 'game_end':
+          // ゲーム終了時の処理
+          navigate('/result', { 
+            state: { 
+              result: data.result,
+              finalScoreA: scoreA,
+              finalScoreB: scoreB
+            } 
+          });
+          break;
+        default:
+          console.log('未処理のメッセージタイプ:', data.status);
+      }
+    };
 
-  //   ws.onerror = (error) => {
-  //     console.error('WebSocketエラー:', error);
-  //     navigate('/');
-  //   };
+    ws.onerror = (error) => {
+      console.error('WebSocketエラー:', error);
+      navigate('/');
+    };
 
-  //   return () => {
-  //     if (ws && ws.readyState === WebSocket.OPEN) {
-  //       ws.close();
-  //     }
-  //   };
-  // }, [roomId, navigate]);
+    return () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [roomId, navigate]);
 
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
@@ -79,60 +90,16 @@ const InGame = () => {
   const [displayText, setDisplayText] = useState("");
 
   // サンプル問題のデータ
-  const [sampleQuestion, setSampleQuestion] = useState([
-    {
-      id: 1,
-      questionText: 
-        'Much of the aid was ferried across the Atlantic Ocean, and so-called Liberty ships provided the backbone of this effort. Thanks to technological improvements, crossing the often-rough Atlantic had generally become a less dangerous prospect for ships in the 1940s than it had been just a few decades earlier. In wartime, however, (       ). Liberty ships were slow, and German submarines patrolled Atlantic waters. Attacks were a constant worry, and some ships along with their crews were lost.',
-      choices: [
-        'a new threat appeared',
-        'more ships were available',
-        'ships only traveled at night',
-        'crew had to be paid more',
-      ],
-      correctAnswer: 'a new threat appeared',
-    },
-    {
-      id: 2,
-      questionText: 
-        'The invention of the printing press in the 15th century revolutionized the way information was shared. Books could now be mass-produced rather than painstakingly copied by hand. This development (       ), leading to an explosion of knowledge and literacy throughout Europe. The effects of this innovation are still felt in modern education and communication.',
-      choices: [
-        'restricted access to books',
-        'reduced the spread of ideas',
-        'lowered the cost of books',
-        'increased manual copying',
-      ],
-      correctAnswer: 'lowered the cost of books',
-    },
-    {
-      id: 3,
-      questionText: 
-        'Forests are vital to maintaining ecological balance and supporting biodiversity. However, deforestation has accelerated over the past century due to human activities such as agriculture and logging. As a result, (       ), leading to loss of habitat for countless species and contributing to climate change.',
-      choices: [
-        'wildlife has flourished',
-        'soil quality has improved',
-        'natural disasters have decreased',
-        'ecosystems have been disrupted',
-      ],
-      correctAnswer: 'ecosystems have been disrupted',
-    },
-    {
-      id: 4,
-      questionText:
-        'Tourists often visit historic sites to learn about the past. Unfortunately, large numbers of visitors can ( ) these sites over time. Some governments limit the number of visitors to protect them. ',
-        choices: [
-          'repair',
-          'damege',
-          'maintain',
-          'decorate',
-        ],
-        correctAnswer: 'damege',
-    },
-  ]);
+  const [sampleQuestion, setSampleQuestion] = useState([]);
 
   // 問題インデックスの管理
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);  // 現在の問題番号（インデックス）
-  const [currentQuestion, setCurrentQuestion] = useState(sampleQuestion[0]);  // 現在の問題
+  const [currentQuestion, setCurrentQuestion] = useState({
+    id: 0,
+    questionText: '',
+    choices: [],
+    correctAnswer: ''
+  });  // 現在の問題
 
   // 問題の早押しボタンの無効化を管理
   const [answerLocked, setAnswerLocked] = useState(false);
@@ -220,7 +187,7 @@ const InGame = () => {
   const handlePlayerClick = () => {
     if (currentPhase === 'idle') {
       setCurrentPhase('playerA'); // プレイヤーA解答中
-      setIsPaused(true);  // タイマーを停止
+      setIsPaused(true);  // ���イマーを停止
       clearInterval(displayTextTimerRef.current);  // テキスト表示タイマーを停止
       clearInterval(timerIntervalRef.current);  //対戦中のタイマーを停止
       setAnswerPhase(true); //解答フェーズに移行
@@ -251,7 +218,7 @@ const InGame = () => {
             return prev + currentQuestion.questionText[nextIndex];
           } else {
             // 完全に表示された場合の処理
-            clearInterval(displayTextTimerRef.current); // タイマーをクリア
+            clearInterval(displayTextTimerRef.current); // タイマ��をクリア
             setCurrentPhase('idle');  // 解答フェーズをidleに戻す
             nextQuestion(); // 次の問題に進む
             return prev;
@@ -371,7 +338,7 @@ const InGame = () => {
     if (currentQuestionIndex < sampleQuestion.length) {
       setCurrentQuestion(sampleQuestion[currentQuestionIndex]);
       setSelectedChoice(null); // 前回の選択肢をリセット
-      setAnswerLocked(false); // 早押しボタンを再度有効に
+      setAnswerLocked(false); // 早押しボタン再度有効に
       setDisplayText(""); // 問題文のテキストをリセット
     }
   }, [currentQuestionIndex, sampleQuestion]);
@@ -401,7 +368,7 @@ const InGame = () => {
     const hpArray = Array.from({ length: 5 });
   
     return hpArray.map((_, index) => {
-      const displayOrder = isPlayerB ? hpArray.length - 1 - index : index; // Bは逆順でひょじ
+      const displayOrder = isPlayerB ? hpArray.length - 1 - index : index; // Bは逆順でひじ
       return (
         <span
           key={index}
@@ -465,6 +432,12 @@ const InGame = () => {
     }
   }
   
+  // 問題の状態をモニタリング
+  useEffect(() => {
+    console.log('現在の問題:', currentQuestion);
+    console.log('全問題:', sampleQuestion);
+  }, [currentQuestion, sampleQuestion]);
+
   return (
     <>
       <div className="relative flex flex-col h-full">
@@ -519,7 +492,7 @@ const InGame = () => {
             </div>
             {/* 解答の選択肢を表示 */}
             <div className="grid grid-cols-2 gap-4 text-[11px] font-inter font-bold">
-              {currentQuestion.choices.map((choice, index) => (
+              {currentQuestion.choices && currentQuestion.choices.map((choice, index) => (
                 <div key={index} className="">
                   {index + 1}. {choice}
                 </div>
@@ -528,7 +501,7 @@ const InGame = () => {
           </div>
         </div>
 
-        {/* 早押しボタン、問題の選択肢、解説の表示エリア（早押しボタンが押されたら問題の選択肢の表示、問題が解かれたら、解説の表示） */}
+        {/* 早押しボタン、問題の選択肢、解説の表示エリア（早押しボタンが押された問題の選択肢の表示、問題が解れたら、解説の表示） */}
         <div className="flex flex-col flex-grow w-full relative items-center">
           {/* 選択肢の表示 */}
           {showChoices && (

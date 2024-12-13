@@ -72,13 +72,13 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if matchedRoom != nil {
-		// 既存の部屋とマッチングが成功した場合の処理
+		// マッチング成功時の処理
 		matchedRoom.IsMatched = true
 		matchedRoom.Player2ID = cookie.Value
 		matchedRoom.Player2Conn = conn
 		roomsMutex.Unlock()
 
-		// 両プレイヤーにマッチング成功を通知
+		// マッチング成功通知
 		matchResponse := map[string]string{
 			"status":  "matched",
 			"room_id": matchedRoom.ID,
@@ -86,15 +86,14 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
 
+		// ゲームセッションを開始
+		go handleGameSession(matchedRoom) // goroutineで実行
+
 		// 接続を維持
 		select {}
-
-		// Player1の場合のみゲームセッションを開始
-		handleGameSession(matchedRoom)
-		return
 	}
 
-	// マッチする部屋が見つからなかった場合、新しい部屋を作成
+	// マッチする部屋が見つかなかった場合、新しい部屋を作成
 	newRoom := &Room{
 		ID:          generateRoomID(),
 		PlayerID:    cookie.Value,
@@ -125,172 +124,35 @@ func generateRoomID() string {
 }
 
 func handleGameSession(room *Room) {
-	// 出題済みの問題IDを管理
-	usedQuestionIDs := make(map[int]bool)
-
-	// 利用可能な問題の総数を取得
-	var totalQuestions int
-	err := db.QueryRow("SELECT COUNT(*) FROM questions").Scan(&totalQuestions)
+	// 問題を一括で取得
+	questions, err := fetchQuestions(5) // 5問取得
 	if err != nil {
-		log.Printf("問題数取得エラー: %v", err)
+		log.Printf("問題取得エラー: %v", err)
 		return
 	}
 
-	// ゲーム開始メッセージを送信
-	startMessage := map[string]string{
-		"status":  "game_start",
-		"message": "対戦を開始します",
+	log.Printf("取得した問題: %+v", questions) // デバッグ用ログ追加
+
+	// ゲーム開始メッセージと問題データを一緒に送信
+	startMessage := map[string]interface{}{
+		"status":    "game_start",
+		"message":   "対戦を開始します",
+		"questions": questions,
 	}
+
+	// Player1への送信
 	if err := room.Player1Conn.WriteJSON(startMessage); err != nil {
 		log.Printf("Player1へのゲーム開始メッセージ送信エラー: %v", err)
 		return
 	}
+
+	// Player2への送信
 	if err := room.Player2Conn.WriteJSON(startMessage); err != nil {
 		log.Printf("Player2へのゲーム開始メッセージ送信エラー: %v", err)
 		return
 	}
 
-	// スコアを管理
-	player1Score := 0
-	player2Score := 0
-
-	// 問題数を管理（利用可能な問題数と5問のうち少ない方）
-	const number_of_questions = 5 // ここで問題数を指定できつ
-	questionsPerGame := min(number_of_questions, totalQuestions)
-
-	for questionCount := 0; questionCount < questionsPerGame; questionCount++ {
-		// まだ出題していない問題を取得
-		var question Question
-		for {
-			err := db.QueryRow(`
-				SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
-				FROM questions 
-				ORDER BY RAND() 
-				LIMIT 1
-			`).Scan(
-				&question.ID,
-				&question.QuestionText,
-				&question.CorrectAnswer,
-				&question.Choices[0],
-				&question.Choices[1],
-				&question.Choices[2],
-				&question.Choices[3],
-			)
-			if err != nil {
-				log.Printf("問題取得エラー: %v", err)
-				return
-			}
-
-			// 未出題の問題であれば使用
-			if !usedQuestionIDs[question.ID] {
-				usedQuestionIDs[question.ID] = true
-				break
-			}
-		}
-
-		// 問題を送信
-		questionMessage := map[string]interface{}{
-			"status":   "question",
-			"question": question,
-		}
-
-		// 両プレイヤーに順番に送信
-		if err := room.Player1Conn.WriteJSON(questionMessage); err != nil {
-			log.Printf("Player1への問題送信エラー: %v", err)
-			return
-		}
-		if err := room.Player2Conn.WriteJSON(questionMessage); err != nil {
-			log.Printf("Player2への問題送信エラー: %v", err)
-			return
-		}
-
-		// 問題送信後、少し待機
-		time.Sleep(1 * time.Second)
-
-		// 回答権管理用のチャネル
-		answerRights := make(chan string, 1)
-		answerTimeout := time.After(10 * time.Second)
-		var answered bool
-
-		// 両プレイヤーからの回答リクエストを待機
-		go handleAnswerRequest(room.Player1Conn, room.PlayerID, answerRights)
-		go handleAnswerRequest(room.Player2Conn, room.Player2ID, answerRights)
-
-		// 回答権または制限時間待ち
-		select {
-		case playerID := <-answerRights:
-			// 回答権獲得を両プレイヤーに通知
-			rightsGrantedMessage := map[string]interface{}{
-				"status":    "answer_rights_granted",
-				"message":   "回答権が獲得されました",
-				"player_id": playerID, // どのプレイヤーが回答権を得たか
-			}
-
-			// 両プレイヤーに通知を送信
-			if err := room.Player1Conn.WriteJSON(rightsGrantedMessage); err != nil {
-				log.Printf("Player1への回答権通知エラー: %v", err)
-			}
-			if err := room.Player2Conn.WriteJSON(rightsGrantedMessage); err != nil {
-				log.Printf("Player2への回答権通知エラー: %v", err)
-			}
-
-			// 回答権を得たプレイヤーの回答を待機
-			answered = handlePlayerAnswer(room, playerID, question.CorrectAnswer)
-
-			// スコアの更新
-			if answered {
-				if playerID == room.PlayerID {
-					player1Score++
-				} else {
-					player2Score++
-				}
-
-				// スコア更新を両プレイヤーに通知
-				scoreMessage := map[string]interface{}{
-					"status":        "score_update",
-					"player1_score": player1Score,
-					"player2_score": player2Score,
-				}
-				room.Player1Conn.WriteJSON(scoreMessage)
-				room.Player2Conn.WriteJSON(scoreMessage)
-			}
-
-		case <-answerTimeout:
-			// 制限時間切れ
-			timeoutMessage := map[string]string{
-				"status":  "timeout",
-				"message": "制限時間切れ",
-			}
-			room.Player1Conn.WriteJSON(timeoutMessage)
-			room.Player2Conn.WriteJSON(timeoutMessage)
-		}
-
-		// 次の問題までの待機時間
-		time.Sleep(3 * time.Second)
-	}
-
-	// 最終結果の通知
-	finalResult := map[string]interface{}{
-		"status": "game_end",
-		"final_scores": map[string]interface{}{
-			"player1": map[string]interface{}{
-				"id":    room.PlayerID,
-				"score": player1Score,
-			},
-			"player2": map[string]interface{}{
-				"id":    room.Player2ID,
-				"score": player2Score,
-			},
-		},
-		"winner": determineWinner(room.PlayerID, room.Player2ID, player1Score, player2Score),
-	}
-
-	room.Player1Conn.WriteJSON(finalResult)
-	room.Player2Conn.WriteJSON(finalResult)
-
-	// レート計算と更新
-	updatePlayerRatings(db, finalResult["winner"].(map[string]string)["id"],
-		finalResult["winner"].(map[string]string)["loser_id"])
+	log.Printf("ゲーム開始メッセージを送信しました: %+v", startMessage) // デバッグ用ログ追加
 }
 
 func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights chan<- string) {
@@ -327,7 +189,7 @@ func handleAnswerRequest(conn *websocket.Conn, playerID string, answerRights cha
 					"message": "他のプレイヤーが回答中です",
 				})
 				if err != nil {
-					log.Printf("回答権拒否メッセージ送信エラー: %v", err)
+					log.Printf("回答権��否メッセージ送信エラー: %v", err)
 					return
 				}
 			}
@@ -418,8 +280,8 @@ func waitForMatch(room *Room) bool {
 				return false
 			}
 			roomsMutex.Unlock()
-		default:
-			time.Sleep(100 * time.Millisecond)
+			// default:
+			// 	time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
@@ -481,4 +343,43 @@ func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
 // InitDB データベース接続を初期化する
 func InitDB(database *sql.DB) {
 	db = database
+}
+
+// 問題を一括取得する関数を追加
+func fetchQuestions(count int) ([]Question, error) {
+	questions := make([]Question, 0, count)
+
+	rows, err := db.Query(`
+		SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
+		FROM questions 
+		ORDER BY RAND() 
+		LIMIT ?
+	`, count)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var q Question
+		var choice1, choice2, choice3, choice4 string
+		err := rows.Scan(
+			&q.ID,
+			&q.QuestionText,
+			&q.CorrectAnswer,
+			&choice1,
+			&choice2,
+			&choice3,
+			&choice4,
+		)
+		if err != nil {
+			return nil, err
+		}
+		// 配列をスライスに変換して代入
+		choices := []string{choice1, choice2, choice3, choice4}
+		q.Choices = choices
+		questions = append(questions, q)
+	}
+
+	return questions, nil
 }
