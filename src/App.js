@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, useLocation} from 'react-router-dom';
 import Login from './components/login/Login';
-import Register from "./components/login/Register";
 import Home from './components/Home';
 import InGame from './components/inGame/InGame';
 import Result from './components/Result/Result';
@@ -18,8 +17,13 @@ import Footer from './components/layout/Footer';
 function App() {
   const location = useLocation();
 
-  const hideHeaderPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"]
-  const hideFooterPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"];
+  // バックエンドのパス指定に合わせてheaderとfooterのパスの調整
+  const hideHeaderPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result"];
+  const hideFooterPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result"];
+
+  // const hideHeaderPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"];
+  // const hideFooterPaths = ["/InGame", "/login", "/Register", "/Matching", "/MatchLoading", "/Result"];
+
   return (
       <>
         <div className="flex flex-col min-h-screen h-screen">
@@ -32,7 +36,6 @@ function App() {
             <Routes>
               {/* ログイン */}
               <Route path="/Login" element={<Login />} />
-              <Route path="/Register" element={<Register />} />
               {/* ホーム */}
               <Route path="/QuizReview" element={<QuizReview />} />
               <Route path="/" element={<Home />} />
