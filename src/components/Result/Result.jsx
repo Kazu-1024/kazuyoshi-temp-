@@ -6,10 +6,23 @@ import HomeRouteButton from '../../assets/images/homeRouteButton.png';
 import ratingBg from "../../assets/images/ratingBg.png";
 
 const Result = () => {
-  // サンプルデータ
-  const [resultData, setResultData] = useState({
-    winner: {name: 'doraemonmo', rate: 1314 },
-    loser: {name: 'doraemonmo', rate: 1298 }
+  // LocalStorageから情報を取得
+  const [resultData, setResultData] = useState(() => {
+    const playerName = localStorage.getItem('playerName');
+    const enemyName = localStorage.getItem('enemyName');
+    const playerScore = parseInt(localStorage.getItem('playerScore') || '0');
+    const enemyScore = parseInt(localStorage.getItem('enemyScore') || '0');
+    
+    // スコアを比較して勝者と敗者を決定
+    const winner = playerScore > enemyScore 
+      ? { name: playerName, rate: 1314 }
+      : { name: enemyName, rate: 1314 };
+    
+    const loser = playerScore > enemyScore
+      ? { name: enemyName, rate: 1298 }
+      : { name: playerName, rate: 1298 };
+
+    return { winner, loser };
   });
 
   return (
