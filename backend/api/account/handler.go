@@ -34,8 +34,13 @@ func SignUpHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("アカウントの作成に成功しました"))
+		// ちょっと新規作成の時にエラーが起きちゃったからjson形式で返すようにしてみた
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusCreated)
+        // w.Write([]byte("アカウントの作成に成功しました"))
+        json.NewEncoder(w).Encode(map[string]string{
+            "message":  "アカウントの作成に成功しました",
+        })
 	}
 }
 
