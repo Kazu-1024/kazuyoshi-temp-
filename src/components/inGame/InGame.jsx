@@ -95,14 +95,19 @@ const InGame = () => {
               setCurrentPhase('playerB');
             }
           } else if (data.status === 'answer_unlock') {
-            // 自分の解答権がなくなった場合
-            if (data.playerId === playerId) {
+            const answeredPlayerId = data.playerId;
+            
+            if (answeredPlayerId !== playerId) {
+              // 相手が不正解の場合
+              setHpB(prevHp => prevHp - 1);
+            }
+            
+            if (answeredPlayerId === playerId) {
               console.log('answer_unlock case に入りました,回答権を失います');
               setCurrentPhase('idle');
               setIsPaused(false);
               setAnswerLocked(true);
-            }else{
-              // 相手の解答権がなくなった場合
+            } else {
               console.log('answer_unlock case に入りました,回答権が復活します');
               setCurrentPhase('idle');
               setIsPaused(false);
@@ -110,11 +115,34 @@ const InGame = () => {
             }
           } else if (data.status === 'answer_correct') {
             console.log('answer_correct case に入りました');
-            alert(data.playerId + 'が正解しました');  // ここは適宜アニメーしょんにおきかえたい
+            const answeredPlayerId = data.playerId;
+            
+            if (answeredPlayerId !== playerId) {
+              // 相手が正解した場合
+              setScoreB(prevScore => prevScore + 1);
+            }
+            alert(data.playerId + 'が正解しました');
             setCurrentPhase('idle');
             setIsPaused(false);
             setAnswerLocked(true);
           }
+
+          // 相手の解答結果を処理
+          if (data.status === 'answer_result') {
+            const answeredPlayerId = data.playerId;
+            
+            // 相手の解答の場合
+            if (answeredPlayerId !== playerId) {
+              if (data.correct) {
+                // 相手が正解した場合
+                setScoreB(prevScore => prevScore + 1);
+              } else {
+                // 相手が不正解の場合
+                setHpB(prevHp => prevHp - 1);
+              }
+            }
+          }
+
         } catch (error) {
           console.error('WebSocketメッセージの処理中にエラー:', error);
         }
@@ -180,7 +208,7 @@ const InGame = () => {
   const [showCorrectImage, setShowCorrectImage] = useState(false);
   const [showIncorrectImage, setShowIncorrectImage] = useState(false);
 
-  //プレイヤ（自分とあいて）の状態を管理
+  //プレイヤー（自分とあいて）の状態を管理
   const [currentPhase, setCurrentPhase] = useState('idle');
   // 'idle' : どっちも未解答, 'playerA' : プレイヤーAが解答中, 'playerB' : プレイヤーBが解答中
 
@@ -195,7 +223,7 @@ const InGame = () => {
    // 文字を一文字ず表示
    useEffect(() => {
     if (!isPaused && currentQuestion && currentQuestion.questionText) {
-      // 問題文の表���が開始されたことを示すstateをtrueに設定
+      // 問題文の表示が開始されたことを示すstateをtrueに設定
       setIsQuestionStarted(true);
 
       displayTextTimerRef.current = setInterval(() => {
@@ -287,15 +315,26 @@ const InGame = () => {
     setShowChoices(false);
 
     const isCorrect = choice === currentQuestion.correctAnswer;
+    
     if (isCorrect) {
-      setScoreA(scoreA + 1);
+      // 正解の場合
+      setScoreA(prevScore => {
+        const newScore = prevScore + 1;
+        localStorage.setItem('playerScore', newScore.toString());
+        return newScore;
+      });
       handleCorrectClick();
     } else {
-      setHpA(hpA - 1);
+      // 不正解の場合
+      setHpA(prevHp => {
+        const newHp = prevHp - 1;
+        localStorage.setItem('playerHp', newHp.toString());
+        return newHp;
+      });
       handleIncorrectClick();
     }
 
-    // 誤答の場合、answer_unlockを送信
+    // WebSocket通信の処理
     if (wsRef.current) {
       wsRef.current.send(JSON.stringify({
         type: 'answer_result',
@@ -309,7 +348,6 @@ const InGame = () => {
     setIsPaused(false);
     setAnswerLocked(false);
     
-    // 問題文を高速表示して次の問題へ
     clearInterval(displayTextTimerRef.current);
     setDisplayText(currentQuestion.questionText);
   };
@@ -419,7 +457,7 @@ const InGame = () => {
   
 
   const renderScoreDots = (score, isPlayerB = false) => {
-    // スコア表示用の配列を作成
+    // スコア表示用���配列を作成
     const scoreArray = Array.from({ length: 5 });
 
     return scoreArray.map((_, index) => {
@@ -470,6 +508,41 @@ const InGame = () => {
     console.log('現在の問題:', currentQuestion);
     console.log('全問題:', sampleQuestion);
   }, [currentQuestion, sampleQuestion]);
+
+  useEffect(() => {
+    // 初期値の読み込み
+    const savedScore = localStorage.getItem('playerScore');
+    const savedHp = localStorage.getItem('playerHp');
+    
+    if (savedScore) {
+      setScoreA(parseInt(savedScore));
+    }
+    
+    if (savedHp) {
+      setHpA(parseInt(savedHp));
+    } else {
+      // HPの初期値を設定
+      localStorage.setItem('playerHp', '5');
+    }
+  }, []);
+
+  // ゲーム開始時のリセット処理
+  const resetGame = () => {
+    // 自分の状態をリセット
+    localStorage.setItem('playerScore', '0');
+    localStorage.setItem('playerHp', '5');
+    setScoreA(0);
+    setHpA(5);
+    
+    // 相手の状態もリセット
+    setScoreB(0);
+    setHpB(5);
+  };
+
+  // コンポーネントマウント時やゲーム開始時に呼び出す
+  useEffect(() => {
+    resetGame();
+  }, []); // 必要に応じてdependenciesを追加
 
   return (
     <>
