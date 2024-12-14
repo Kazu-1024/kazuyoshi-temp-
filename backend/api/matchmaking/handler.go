@@ -137,10 +137,22 @@ func handleGameSession(room *Room) {
 		"status":    "game_start",
 		"message":   "対戦を開始します",
 		"questions": questions,
+		"opponent":  room.Player2ID,
+		"player1Id": room.PlayerID,
 	}
 
 	room.Player1Conn.WriteJSON(startMessage)
-	room.Player2Conn.WriteJSON(startMessage)
+
+	// Player2用のメッセージを作成（opponentをPlayer1の名前に設定）
+	player2Message := map[string]interface{}{
+		"status":    "game_start",
+		"message":   "対戦を開始します",
+		"questions": questions,
+		"opponent":  room.PlayerID,
+		"player1Id": room.PlayerID,
+	}
+
+	room.Player2Conn.WriteJSON(player2Message)
 
 	// 各プレイヤーのメッセージを監視
 	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
@@ -185,7 +197,7 @@ func handleGameSession(room *Room) {
 		// 	// 受信した回答結果をログに出力
 		// 	log.Printf("受信した回答結果: %+v", answerResult)
 
-		// 	// 回答結果を処理
+		// 	// 回��結果を処理
 		// 	isCorrect := answerResult["correct"].(bool)
 
 		// 	// 誤答の場合、answer_unlockを送信

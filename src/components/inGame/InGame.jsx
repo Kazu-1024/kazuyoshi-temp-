@@ -15,16 +15,19 @@ const InGame = () => {
   const wsRef = useRef(null);
   const [playerId, setPlayerId] = useState(null);
 
-  // クッキーからusernameを取得
+  // クッキーからusernameを取得してLocalStorageに保存するuseEffect
   useEffect(() => {
     const getCookie = (name) => {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(';').shift();
     };
+    
     const username = getCookie('username');
     if (username) {
       setPlayerId(username);
+      // LocalStorageにユーザー名を保存
+      localStorage.setItem('playerName', username);
     }
   }, []);
 
@@ -67,8 +70,18 @@ const InGame = () => {
           console.log('受信したメッセージの詳細:', data);
 
           if (data.status === 'game_start' && data.questions) {
+            // 対戦相手の名前を設定
+            if (data.opponent) {
+              console.log('対戦相手の名前を受信:', data.opponent);
+              // 自分がPlayer2の場合は、opponentがPlayer1の名前
+              if (data.opponent === playerId) {
+                localStorage.setItem('enemyName', data.player1Id);
+              } else {
+                localStorage.setItem('enemyName', data.opponent);
+              }
+            }
+            
             console.log('問題データを受信:', data.questions);
-            // 問題データのフォーマットを修正
             const formattedQuestions = data.questions.map(q => ({
               id: q.id,
               questionText: q.question_text || '',
@@ -119,9 +132,13 @@ const InGame = () => {
             
             if (answeredPlayerId !== playerId) {
               // 相手が正解した場合
-              setScoreB(prevScore => prevScore + 1);
+              setScoreB(prevScore => {
+                const newScore = prevScore + 1;
+                localStorage.setItem('enemyScore', newScore.toString());
+                return newScore;
+              });
             }
-            alert(data.playerId + 'が正解しました');
+            console.log(data.playerId + 'が正解しました');
             setCurrentPhase('idle');
             setIsPaused(false);
             setAnswerLocked(true);
@@ -135,10 +152,18 @@ const InGame = () => {
             if (answeredPlayerId !== playerId) {
               if (data.correct) {
                 // 相手が正解した場合
-                setScoreB(prevScore => prevScore + 1);
+                setScoreB(prevScore => {
+                  const newScore = prevScore + 1;
+                  localStorage.setItem('enemyScore', newScore.toString());
+                  return newScore;
+                });
               } else {
                 // 相手が不正解の場合
-                setHpB(prevHp => prevHp - 1);
+                setHpB(prevHp => {
+                  const newHp = prevHp - 1;
+                  localStorage.setItem('enemyHp', newHp.toString());
+                  return newHp;
+                });
               }
             }
           }
@@ -166,7 +191,7 @@ const InGame = () => {
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0); 
-  // プレイヤーの残機
+  // プレイヤーの���機
   const [hpA, setHpA] = useState(5);    
   const [hpB, setHpB] = useState(5);
 
@@ -192,7 +217,7 @@ const InGame = () => {
   // サンプル問題データ
   const [sampleQuestion, setSampleQuestion] = useState([]);
 
-  // 問題インデックスの管理
+  // 問題イン��ックスの管理
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);  // 現在の問題番号（インデックス）
   const [currentQuestion, setCurrentQuestion] = useState({
     id: 0,
@@ -249,7 +274,7 @@ const InGame = () => {
   const intervalTime = 50; //プログレスバーの進む速さ
   // 問題のタイマー
   useEffect(() => {
-    // 問題文がすべて表示された場合のみカウントダウンを開始
+    // 問題文がすべて表された場合の���カウントダウンを開始
     if (isQuestionFullyDisplayed && !isPaused) {
       timerIntervalRef.current = setInterval(() => {
         setTimeLeft((prevTime) => (prevTime <= 0 ? 0 : prevTime - 1));
@@ -297,7 +322,7 @@ const InGame = () => {
   };
   
 
-  // 早押しボタンがクリッれたときの処理
+  // 押しボタンがク���ッれたときの処理
   const handlePlayerClick = () => {
     if (currentPhase === 'idle' && wsRef.current) {
       wsRef.current.send(JSON.stringify({
@@ -398,11 +423,11 @@ const InGame = () => {
   // 解答の残り時間がなくなった場合
   const handleTimeOut = () => {
     setShowChoices(false); // 選択肢を非表示
-    setIsPaused(false); // タイマー再開
+    setIsPaused(false); // タ���マー再開
     setAnswerPhase(false); // 解答フェーズを終了
   };
 
-  // 問題のインデックスが更新されたら次の問題を設定
+  // 問題��インデックスが更新されたら次の問題を設定
   useEffect(() => {
     if (currentQuestionIndex < sampleQuestion.length) {
       setCurrentQuestion(sampleQuestion[currentQuestionIndex]);
@@ -410,7 +435,7 @@ const InGame = () => {
       setAnswerLocked(false); // 早押しボタンを再度有効に
       setDisplayText(""); // 問題文のテキストをリセット
       setIsQuestionStarted(false); // 問題文の表示が開始されたことを示すstateをリセット
-      setIsQuestionFullyDisplayed(false); // 問題文がすべて表示されたことを示すstateをリセット
+      setIsQuestionFullyDisplayed(false); // 問題文がすべて表示されたことを示すstate���リセット
     }
   }, [currentQuestionIndex, sampleQuestion]);
 
@@ -457,7 +482,7 @@ const InGame = () => {
   
 
   const renderScoreDots = (score, isPlayerB = false) => {
-    // スコア表示用���配列を作成
+    // スコア表示用の配を作成
     const scoreArray = Array.from({ length: 5 });
 
     return scoreArray.map((_, index) => {
@@ -513,6 +538,7 @@ const InGame = () => {
     // 初期値の読み込み
     const savedScore = localStorage.getItem('playerScore');
     const savedHp = localStorage.getItem('playerHp');
+    const savedName = localStorage.getItem('playerName');
     
     if (savedScore) {
       setScoreA(parseInt(savedScore));
@@ -521,20 +547,29 @@ const InGame = () => {
     if (savedHp) {
       setHpA(parseInt(savedHp));
     } else {
-      // HPの初期値を設定
       localStorage.setItem('playerHp', '5');
+    }
+
+    if (savedName) {
+      setPlayerId(savedName);
     }
   }, []);
 
-  // ゲーム開始時のリセット処理
+  // ゲーム開始時のリセット処理を修正
   const resetGame = () => {
+    const playerName = localStorage.getItem('playerName');
+    
     // 自分の状態をリセット
     localStorage.setItem('playerScore', '0');
     localStorage.setItem('playerHp', '5');
+    localStorage.setItem('playerName', playerName || ''); // 名前を保���
     setScoreA(0);
     setHpA(5);
     
-    // 相手の状態もリセット
+    // 対戦相手の状態もリセット
+    localStorage.setItem('enemyScore', '0');
+    localStorage.setItem('enemyHp', '5');
+    localStorage.setItem('enemyName', '対戦相手');
     setScoreB(0);
     setHpB(5);
   };
