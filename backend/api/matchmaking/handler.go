@@ -254,18 +254,20 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			// 誤答の場合、answer_unlockを送信
 			if !isCorrect {
 				unlockMessage := map[string]interface{}{
-					"status": "answer_unlock",
+					"status":   "answer_unlock",
+					"playerId": playerID,
 				}
 				room.Player1Conn.WriteJSON(unlockMessage)
 				room.Player2Conn.WriteJSON(unlockMessage)
 			}
-			// 正解の場合 next_questionをおくる
+			// 正解の場合 answer_correctとplayerIdを送信
 			if isCorrect {
-				nextQuestionMessage := map[string]interface{}{
-					"status": "next_question",
+				answerCorrectMessage := map[string]interface{}{
+					"status":   "answer_correct",
+					"playerId": playerID,
 				}
-				room.Player1Conn.WriteJSON(nextQuestionMessage)
-				room.Player2Conn.WriteJSON(nextQuestionMessage)
+				room.Player1Conn.WriteJSON(answerCorrectMessage)
+				room.Player2Conn.WriteJSON(answerCorrectMessage)
 			}
 		}
 	}

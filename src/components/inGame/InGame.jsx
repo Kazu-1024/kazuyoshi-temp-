@@ -88,17 +88,32 @@ const InGame = () => {
               setIsPaused(true);
               setShowChoices(true);
               setAnswerLocked(true);
+              setCurrentPhase('playerA');
             } else {
               setIsPaused(true);
               setAnswerLocked(true);
+              setCurrentPhase('playerB');
             }
           } else if (data.status === 'answer_unlock') {
-            console.log('answer_unlock case に入りました');
+            // 自分の解答権がなくなった場合
+            if (data.playerId === playerId) {
+              console.log('answer_unlock case に入りました,回答権を失います');
+              setCurrentPhase('idle');
+              setIsPaused(false);
+              setAnswerLocked(true);
+            }else{
+              // 相手の解答権がなくなった場合
+              console.log('answer_unlock case に入りました,回答権が復活します');
+              setCurrentPhase('idle');
+              setIsPaused(false);
+              setAnswerLocked(false);
+            }
+          } else if (data.status === 'answer_correct') {
+            console.log('answer_correct case に入りました');
+            alert(data.playerId + 'が正解しました');  // ここは適宜アニメーしょんにおきかえたい
+            setCurrentPhase('idle');
             setIsPaused(false);
-            setAnswerLocked(false);
-          } else if (data.status === 'next_question') {
-            console.log('next_question case に入りました');
-            nextQuestion();
+            setAnswerLocked(true);
           }
         } catch (error) {
           console.error('WebSocketメッセージの処理中にエラー:', error);
@@ -122,9 +137,9 @@ const InGame = () => {
 
   // 対戦中のスコアを管理する変数
   const [scoreA, setScoreA] = useState(0);
-  const [scoreB, setScoreB] = useState(0);
+  const [scoreB, setScoreB] = useState(0); 
   // プレイヤーの残機
-  const [hpA, setHpA] = useState(5);
+  const [hpA, setHpA] = useState(5);    
   const [hpB, setHpB] = useState(5);
 
   const [timeLeft, setTimeLeft] = useState(100);  // 問題ごとの残り時間
