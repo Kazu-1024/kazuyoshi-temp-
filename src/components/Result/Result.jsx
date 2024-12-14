@@ -1,4 +1,5 @@
 import React, {useState} from 'react'
+import { useNavigate } from 'react-router-dom';
 import Tag1on1 from '../../assets/images/1on1_tag.png';
 import ResultText from '../../assets/images/ResultText.png'
 import defaultIcon from '../../assets/images/defaultIcon.png';
@@ -6,6 +7,8 @@ import HomeRouteButton from '../../assets/images/homeRouteButton.png';
 import ratingBg from "../../assets/images/ratingBg.png";
 
 const Result = () => {
+  const navigate = useNavigate();
+  
   // LocalStorageから情報を取得
   const [resultData, setResultData] = useState(() => {
     const playerName = localStorage.getItem('playerName');
@@ -87,7 +90,7 @@ const Result = () => {
             <div className="w-64 h-16 rounded-full bg-gray-400 mb-10">
               {/* 共有リンクの内容を追記 */}
             </div>
-            <button className="mx-auto mb-16">
+            <button className="mx-auto mb-16" onClick={() => navigate('/')}>
               <img src={HomeRouteButton} alt="Home" />
             </button>
           </div>
