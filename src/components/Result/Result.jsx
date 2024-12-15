@@ -5,6 +5,7 @@ import ResultText from '../../assets/images/ResultText.png'
 import defaultIcon from '../../assets/images/defaultIcon.png';
 import HomeRouteButton from '../../assets/images/homeRouteButton.png';
 import ratingBg from "../../assets/images/ratingBg.png";
+import shareImg from "../../assets/images/share.png";
 
 const Result = () => {
   const navigate = useNavigate();
@@ -87,8 +88,11 @@ const Result = () => {
           </div>
           {/* 共有リンクとボタンのセクション */}
           <div className="flex flex-col items-center w-full mt-auto">
-            <div className="w-64 h-16 rounded-full bg-gray-400 mb-10">
-              {/* 共有リンクの内容を追記 */}
+            {/* 共有リンクをとりあえず画像で表示してる */}
+            {/* <div className="w-64 h-16 rounded-full bg-gray-400 mb-10">
+            </div> */}
+            <div className="w-64 h-16 mb-10">
+              <img src={shareImg} className="object-cover" />
             </div>
             <button className="mx-auto mb-16" onClick={() => navigate('/')}>
               <img src={HomeRouteButton} alt="Home" />
