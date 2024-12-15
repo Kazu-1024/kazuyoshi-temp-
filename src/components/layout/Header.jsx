@@ -7,15 +7,12 @@ const Header = () => {
   const [rate, setRate] = useState(1500)
   return (
     <>
-      <HamburgerMenu />
-      <Notifications />
-      <div className='mx-20 font-jaro text-3xl'>HOME</div>
-      {/* <span className="material-icons">notifications</span> */}
-      <div className="">
-        <div className="flex flex-col">
-        </div>
-        <img src={MTH} alt="" className="rounded-full h-12 w-12 ml-2 mr-4" />
+      <div className="flex items-center">
+        <HamburgerMenu />
+        <Notifications />
       </div>
+      <div className='absolute inset-0 flex items-center justify-center font-jaro text-3xl'>HOME</div>
+      <img src={MTH} alt="" className="rounded-full h-12 w-12 ml-auto mr-5" />
     </>
   )
 }

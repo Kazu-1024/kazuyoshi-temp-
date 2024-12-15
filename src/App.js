@@ -28,7 +28,7 @@ function App() {
       <>
         <div className="flex flex-col min-h-screen h-screen">
           {!hideHeaderPaths.includes(location.pathname) && (
-            <header className="h-32 border-b-2 border-black flex items-center shadow-md">
+            <header className="h-32 border-b-2 border-black flex items-center shadow-md relative">
               <Header />
             </header>
           )}
