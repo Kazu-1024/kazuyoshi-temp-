@@ -26,10 +26,10 @@ const Home = () => {
             <option value="TOEIC">TOEIC</option>
           </select>
         </div>
-        <div className="relative flex flex-col items-center">
-          <img src={selectStyle} className="mx-auto w-11/12" alt="Style Select" />
-          <button className="absolute bottom-5 w-1/2 h-16" onClick={() => navigate('/Matching')}>
-            <img src={startButton} alt="Start Button" className="w-full h-full" />
+        <div className="relative flex flex-col items-center justify-center h-auto w-11/12 mx-auto mt-10">
+          <img src={selectStyle} className="object-cover" alt="Style Select" />
+          <button className="absolute bottom-0 transform -translate-y-1/2 w-1/2 h-16 flex items-center justify-center" onClick={() => navigate('/Matching')}>
+            <img src={startButton} alt="Start Button" className="object-cover" />
           </button>
         </div>
         <div className="absolute bottom-20 left-2 mb-2">
