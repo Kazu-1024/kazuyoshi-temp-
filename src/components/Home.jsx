@@ -9,42 +9,8 @@ import pulldownIcon from '../assets/images/pulldownIcon.png';
 const Home = () => {
   const navigate = useNavigate();
   const [rate, SetRate] = useState(1314);
-<<<<<<< HEAD
-  return (
-    <>
-      {/* <button className="border-4" onClick={() => navigate('/login')}>ログイン</button>
-      <button type="" onClick={() => navigate('/Matching')}>マッチング開始</button> */}
-      <div className="relative flex flex-col h-full w-full">
-        <div className="absolute right-1 top-1">
-          <img src={ratingBg} alt="Rating Background" className="block" />
-          <p className="absolute inset-0 left-9 flex items-center text-brack font-jaro tracking-wider text-xl outlined-bold">
-            {rate}
-          </p>
-        </div>
-        <div className="w-full h-28 flex flex-col justify-center">
-          <select size="1" className="absolute left-1/2 transform -translate-x-1/2 w-1/3 flex justify-center items-center text-center h-8">
-            <option value="eiken">英検準一級</option>
-            <option value="TOEIC">TOEIC</option>
-          </select>
-        </div>
-        <div className="relative flex flex-col items-center justify-center h-auto w-11/12 mx-auto mt-10">
-          <img src={selectStyle} className="object-cover" alt="Style Select" />
-          <button className="absolute bottom-0 transform -translate-y-1/2 w-1/2 h-16 flex items-center justify-center" onClick={() => navigate('/Matching')}>
-            <img src={startButton} alt="Start Button" className="object-cover" />
-          </button>
-        </div>
-        <div className="absolute bottom-20 left-2 mb-2">
-          <button onClick={() => {
-            console.log('ヘルプボタンがクリックされました');
-          }}>
-            <img src={HelpCircle} className="w-10 h-10" alt="Help" />
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
-=======
+
+
   const [isOpen, setIsOpen] = useState(false);  // プルダウンメニューの開閉状態
   const [selectedOption, setSelectedOption] = useState("");  // 選択した項目
   
@@ -52,7 +18,7 @@ const Home = () => {
     { value: 'eiken', label: '英検準一級' },
     { value: 'TOEIC', label: 'TOEIC' },
   ];
->>>>>>> yamamon
+
 
   // プルダウンの開閉状態を切り替える関数
   const toggleDropdown = () => {
@@ -140,6 +106,7 @@ const Home = () => {
       </div>
     </div>
   );
-};
+}
+
 
 export default Home;
