@@ -9,26 +9,8 @@ import Dropdown from './common/Dropdown';
 const Home = () => {
   const navigate = useNavigate();
   const [rate, SetRate] = useState(1314);
-<<<<<<< HEAD
 
-
-  const [isOpen, setIsOpen] = useState(false);  // プルダウンメニューの開閉状態
   const [selectedOption, setSelectedOption] = useState("");  // 選択した項目
-  
-  const options = [
-    { value: 'eiken', label: '英検準一級' },
-    { value: 'TOEIC', label: 'TOEIC' },
-  ];
-
-
-  // プルダウンの開閉状態を切り替える関数
-  const toggleDropdown = () => {
-    setIsOpen(prevState => !prevState);  // 現在の状態を反転
-  };
-=======
-  const [selectedOption, setSelectedOption] = useState("");  // 選択した項目
->>>>>>> bc8cc9431de8464897b02e9ca61c8dcc83a3e376
-
   // オプションが選ばれた時の処理
   const handleOptionSelect = (option) => {
     setSelectedOption(option.label);  // 選ばれた項目を設定
