@@ -15,6 +15,7 @@ const Matching = () => {
   const navigate = useNavigate();
   const [ws, setWs] = useState(null);
 
+  let data = 0;
   // WebSocket接続の確立
   useEffect(() => {
     const websocket = new WebSocket('ws://localhost:8080/matchmaking');
@@ -24,7 +25,7 @@ const Matching = () => {
     };
 
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      data = JSON.parse(event.data);
       console.log('受信したメッセージ:', data);
 
       switch (data.status) {
@@ -38,6 +39,10 @@ const Matching = () => {
           break;
         case 'timeout':
           alert('マッチングがタイムアウトしました。');
+          navigate(-1);
+          break;
+        case 'cancel':
+          alert('マッチングをキャンセルしました');
           navigate(-1);
           break;
         case 'unauthorized':
@@ -129,10 +134,14 @@ const Matching = () => {
 
   // キャンセルボタンのハンドラー
   const backHomepage = () => {
+    console.log("キャンセル");
     if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'match_cancel',
+        roomId: data.room_id
+      }));
       ws.close();
     }
-    navigate(-1);
   };
 
   //スライドコンテナの切れ端表示する処理

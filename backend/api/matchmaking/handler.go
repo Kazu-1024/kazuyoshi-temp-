@@ -111,11 +111,42 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		"room_id": newRoom.ID,
 	})
 
-	// マッチングを待機
+		// マッチングを待機
 	if waitForMatch(newRoom) {
+		var message map[string]interface{}
+		err := conn.ReadJSON(&message)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("予期せぬ接続切断: %v", err)
+			}
+			// エラーが発生した場合でも、接続を閉じずにループを継続
+			return
+		}
+
+		if message["type"] == "match_cancel" {
+			cancelMessage := map[string]interface{}{
+				"status": "cancel",
+			}
+
+			// 部屋作成者にキャンセルメッセージを送信
+			newRoom.Player1Conn.WriteJSON(cancelMessage)
+
+			// roomId を取得して削除
+			if roomId, ok := message["roomId"].(string); ok {
+				delete(rooms, roomId)
+			} else {
+				log.Println("roomId が見つからないか、型が正しくありません")
+			}
+		}
+
 		// 部屋作成者（Player1）の場合のみゲームセッションを開始
 		handleGameSession(newRoom)
 	}
+
+
+		// 部屋作成者（Player1）の場合のみゲームセッションを開始
+		handleGameSession(newRoom)
+
 	// マッチングがタイムアウトした場合は、この時点で処理が終了する
 }
 
