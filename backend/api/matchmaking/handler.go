@@ -111,19 +111,17 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		"room_id": newRoom.ID,
 	})
 
-		// マッチングを待機
-	if waitForMatch(newRoom) {
-		var message map[string]interface{}
-		err := conn.ReadJSON(&message)
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("予期せぬ接続切断: %v", err)
+	var message map[string]interface{}
+		er := conn.ReadJSON(&message)
+		if er != nil {
+			if websocket.IsUnexpectedCloseError(er, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("予期せぬ接続切断: %v", er)
 			}
 			// エラーが発生した場合でも、接続を閉じずにループを継続
 			return
 		}
 
-		if message["type"] == "match_cancel" {
+		if message["status"] == "match_cancel" {
 			cancelMessage := map[string]interface{}{
 				"status": "cancel",
 			}
@@ -132,14 +130,16 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 			newRoom.Player1Conn.WriteJSON(cancelMessage)
 
 			// roomId を取得して削除
-			if roomId, ok := message["roomId"].(string); ok {
+			if roomId, ok := message["room_id"].(string); ok {
 				delete(rooms, roomId)
 			} else {
 				log.Println("roomId が見つからないか、型が正しくありません")
 			}
 		}
 
-		// 部屋作成者（Player1）の場合のみゲームセッションを開始
+		// マッチングを待機
+	if waitForMatch(newRoom) {
+				// 部屋作成者（Player1）の場合のみゲームセッションを開始
 		handleGameSession(newRoom)
 	}
 
@@ -153,6 +153,37 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 func generateRoomID() string {
 	// ユニークな部屋IDを生成する実装
 	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+func waitForMatch(room *Room) bool {
+	// タイムアウト時間を300秒に延長
+	ticker := time.NewTicker(300 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		roomsMutex.Lock()
+		if room.IsMatched {
+			roomsMutex.Unlock()
+			return true
+		}
+		roomsMutex.Unlock()
+
+		select {
+		case <-ticker.C:
+			roomsMutex.Lock()
+			if !room.IsMatched {
+				delete(rooms, room.ID)
+				room.Player1Conn.WriteJSON(map[string]string{
+					"status": "timeout",
+				})
+				roomsMutex.Unlock()
+				return false
+			}
+			roomsMutex.Unlock()
+			// default:
+			// 	time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 func handleGameSession(room *Room) {
@@ -170,6 +201,7 @@ func handleGameSession(room *Room) {
 		"questions": questions,
 		"opponent":  room.Player2ID,
 		"player1Id": room.PlayerID,
+		"startTime": time.Now(),
 	}
 
 	room.Player1Conn.WriteJSON(startMessage)
@@ -181,6 +213,7 @@ func handleGameSession(room *Room) {
 		"questions": questions,
 		"opponent":  room.PlayerID,
 		"player1Id": room.PlayerID,
+		"startTime": time.Now(),
 	}
 
 	room.Player2Conn.WriteJSON(player2Message)
@@ -268,6 +301,7 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			answerMessage := map[string]interface{}{
 				"status":   "answer_given",
 				"playerId": playerID,
+				"anserTime": time.Now(),
 			}
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)
@@ -299,6 +333,7 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 				unlockMessage := map[string]interface{}{
 					"status":   "answer_unlock",
 					"playerId": playerID,
+					"unlockTime": time.Now(),
 				}
 				room.Player1Conn.WriteJSON(unlockMessage)
 				room.Player2Conn.WriteJSON(unlockMessage)
@@ -312,59 +347,39 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 				room.Player1Conn.WriteJSON(answerCorrectMessage)
 				room.Player2Conn.WriteJSON(answerCorrectMessage)
 			}
-		}
-	}
-}
-
-func waitForMatch(room *Room) bool {
-	// タイムアウト時間を300秒に延長
-	ticker := time.NewTicker(300 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		roomsMutex.Lock()
-		if room.IsMatched {
-			roomsMutex.Unlock()
-			return true
-		}
-		roomsMutex.Unlock()
-
-		select {
-		case <-ticker.C:
-			roomsMutex.Lock()
-			if !room.IsMatched {
-				delete(rooms, room.ID)
-				room.Player1Conn.WriteJSON(map[string]string{
-					"status": "timeout",
-				})
-				roomsMutex.Unlock()
-				return false
+			//切断されたとき　残っているplayerにdisconectedとplayerIdを送信
+		} else if message["type"] == "surrender"{
+			surrenderMessage := map[string]interface{}{
+				"status": "disconected",
+				"playerId" :,
 			}
-			roomsMutex.Unlock()
-			// default:
-			// 	time.Sleep(100 * time.Millisecond)
+			room.Player1Conn.WriteJSON(surrenderMessage)
 		}
 	}
 }
 
 // 勝者を決定する関数
+
 func determineWinner(player1ID, player2ID string, score1, score2 int) map[string]string {
 	if score1 > score2 {
 		return map[string]string{
 			"id":       player1ID,
 			"loser_id": player2ID,
 			"message":  "Player 1の勝利！",
+			"endTime": time.Now().Format(time.RFC3339),
 		}
 	} else if score2 > score1 {
 		return map[string]string{
 			"id":       player2ID,
 			"loser_id": player1ID,
 			"message":  "Player 2の勝利！",
+			"endTime": time.Now().Format(time.RFC3339),
 		}
 	}
 	return map[string]string{
 		"id":      "draw",
 		"message": "引き分け",
+		"endTime": time.Now().Format(time.RFC3339),
 	}
 }
 

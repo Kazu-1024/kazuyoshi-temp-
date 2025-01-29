@@ -116,7 +116,7 @@ const InGame = () => {
             }
             
             if (answeredPlayerId === playerId) {
-              console.log('answer_unlock case に入りました,回答権を失います');
+              console.log('answer_lock case に入りました,回答権を失います');
               setCurrentPhase('idle');
               setIsPaused(false);
               setAnswerLocked(true);
