@@ -14,8 +14,8 @@ const Matching = () => {
   const [userRate, setUserRate] = useState(1500); // レート状態を追加
   const navigate = useNavigate();
   const [ws, setWs] = useState(null);
+  const [data, setData] = useState(null);
 
-  let data = 0;
   // WebSocket接続の確立
   useEffect(() => {
     const websocket = new WebSocket('ws://localhost:8080/matchmaking');
@@ -25,15 +25,16 @@ const Matching = () => {
     };
 
     websocket.onmessage = (event) => {
-      data = JSON.parse(event.data);
-      console.log('受信したメッセージ:', data);
+      const responceData = JSON.parse(event.data);
+      setData(responceData);
+      console.log('受信したメッセージ:', responceData);
 
-      switch (data.status) {
+      switch (responceData.status) {
         case 'matched':
           // マッチングが成功したら、MatchLoadingコンポーネントに遷移
           navigate('/matchloading', { 
             state: { 
-              roomId: data.room_id 
+              roomId: responceData.room_id 
             }
           });
           break;
@@ -44,13 +45,14 @@ const Matching = () => {
         case 'cancel':
           alert('マッチングをキャンセルしました');
           navigate(-1);
+          websocket.close();
           break;
         case 'unauthorized':
           alert('マッチングに失敗しました。ログインしてください');
           navigate('/login');
           break;
         default:
-          console.log('未処理のメッセージタイプ:', data.status);
+          console.log('未処理のメッセージタイプ:', responceData.status);
       }
     };
 
@@ -137,10 +139,9 @@ const Matching = () => {
     console.log("キャンセル");
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
-        type: 'match_cancel',
-        roomId: data.room_id
+        room_id: data.room_id,
+        status: 'match_cancel'
       }));
-      ws.close();
     }
   };
 
