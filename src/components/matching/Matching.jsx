@@ -15,7 +15,7 @@ const Matching = () => {
   const navigate = useNavigate();
   const [ws, setWs] = useState(null);
   const [data, setData] = useState(null);
-
+ 
   // WebSocket接続の確立
   useEffect(() => {
     const websocket = new WebSocket('ws://localhost:8080/matchmaking');

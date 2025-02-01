@@ -188,7 +188,7 @@ func waitForMatch(room *Room) bool {
 
 func handleGameSession(room *Room) {
 	// 問題を一括で取得
-	questions, err := fetchQuestions(5)
+	questions, err := fetchQuestions(10)
 	if err != nil {
 		log.Printf("問題取得エラー: %v", err)
 		return
@@ -457,12 +457,13 @@ func fetchQuestions(count int) ([]Question, error) {
 		var q Question
 		var choice1, choice2, choice3, choice4 string
 		err := db.QueryRow(`
-			SELECT id, question_text, correct_answer, choice1, choice2, choice3, choice4 
+			SELECT id, question_text, question_type, correct_answer, choice1, choice2, choice3, choice4 
 			FROM questions 
 			WHERE id = ?
 		`, id).Scan(
 			&q.ID,
 			&q.QuestionText,
+			&q.Quetiontype,
 			&q.CorrectAnswer,
 			&choice1,
 			&choice2,
