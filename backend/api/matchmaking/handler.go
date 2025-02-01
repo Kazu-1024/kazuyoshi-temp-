@@ -347,16 +347,13 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 				room.Player1Conn.WriteJSON(answerCorrectMessage)
 				room.Player2Conn.WriteJSON(answerCorrectMessage)
 			}
-<<<<<<< HEAD
 			//切断されたとき　残っているplayerにdisconectedとplayerIdを送信
 		} else if message["type"] == "surrender"{
 			surrenderMessage := map[string]interface{}{
 				"status": "disconected",
-				"playerId" :,
+				"playerId" : playerID,
 			}
 			room.Player1Conn.WriteJSON(surrenderMessage)
-=======
->>>>>>> b1208c2803bdbdc45f8ab9dca8d9babbbc85c278
 		}
 	}
 }

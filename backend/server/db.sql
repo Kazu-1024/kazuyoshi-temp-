@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS friends (
 CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     creator_username VARCHAR(255) NOT NULL,
+    question_type VARCHAR(255) NOT NULL,
     question_text TEXT NOT NULL,
     correct_answer VARCHAR(255) NOT NULL,
     choice1 VARCHAR(255) NOT NULL,
