@@ -463,7 +463,7 @@ func fetchQuestions(count int) ([]Question, error) {
 		`, id).Scan(
 			&q.ID,
 			&q.QuestionText,
-			&q.Quetiontype,
+			&q.Questiontype,
 			&q.CorrectAnswer,
 			&choice1,
 			&choice2,
