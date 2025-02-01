@@ -7,6 +7,7 @@ import RatingB from "../../assets/images/Frame_37.png";
 import Tag1on1 from "../../assets/images/1on1_tag.png";
 
 const Matching = () => {
+  const url = '//localhost:8080';
   // アクティブなスライドのインデックスを管理するstate
   const [activeIndex, setActiveIndex] = useState(0);
   // スクロール可能なコンテナへの参照を保持するref
@@ -18,7 +19,7 @@ const Matching = () => {
  
   // WebSocket接続の確立
   useEffect(() => {
-    const websocket = new WebSocket('ws://localhost:8080/matchmaking');
+    const websocket = new WebSocket(`ws:${url}/matchmaking`);
     
     websocket.onopen = () => {
       console.log('WebSocket接続確立');
@@ -74,7 +75,7 @@ const Matching = () => {
   useEffect(() => {
     const fetchUserRate = async () => {
       try {
-        const response = await fetch('http://localhost:8080/rate/user', {
+        const response = await fetch(`http:${url}/rate/user`, {
           credentials: 'include', // クッキーを含める
         });
         if (response.ok) {
