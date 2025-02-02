@@ -5,10 +5,13 @@ const WebSocketContext = createContext(null);
 export const WebSocketProvider = ({ children }) => {
     const [ws, setWs] = useState(null);
     const [messageData, setMessageData] = useState(null);
+    const [isconected, setIsconected] = useState(null);
     const url = "ws://localhost:8080/matchmaking";
   
     useEffect(() => {
-      const websocket = new WebSocket(url);
+      if(!isconected){
+        const websocket = new WebSocket(url);
+        setIsconected(true);
   
       websocket.onopen = () => {
         console.log("WebSocket接続確立");
@@ -32,6 +35,7 @@ export const WebSocketProvider = ({ children }) => {
           websocket.close();
         }
       };
+    }
     }, []);
   
     return (

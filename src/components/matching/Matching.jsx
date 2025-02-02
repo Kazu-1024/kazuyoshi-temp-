@@ -63,10 +63,6 @@ const Matching = () => {
     // クリーンアップ時にリスナーを解除
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-        console.log("WebSocketがクローズされました");
-      }
     };
 
   }, [messageData]); // メッセージデータが変わるたびにログを表示

@@ -297,7 +297,7 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			return
 		}
 
-		if message["type"] == "answer_right" {
+		if message["type"] == "try_answer" {
 			// 早押し成功通知を両プレイヤーに送信
 			answerMessage := map[string]interface{}{
 				"status":   "answer_given",
