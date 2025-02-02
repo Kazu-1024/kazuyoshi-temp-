@@ -4,6 +4,8 @@ import TimerQuestionDisplay from './Question/TimerQuestionDisplay';
 import icon from '../../assets/images/defaultIcon.png';
 import AnswerButton from './AnswerButton';
 import Choices from './Choices.jsx';
+import Answering from './Answering.jsx';
+import AnswerAnimation from './AnswerAnimation.jsx';
 
 const InGame = () => {
   const [scoreA, setScoreA] = useState(0);
@@ -15,6 +17,9 @@ const InGame = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [isFastDisplay, setIsFastDisplay] = useState(false);  // 問題に正解してたらtrueにしたら問題文の表示が早くなるy
+  const [isAnswering, setIsAnswering] = useState(false); // 対戦相手が解答中だったらtrueにしてね
+  const [isCorrect, setIsCorrect] = useState(null); // 解答が正解かどうか
+
 
 
   const onQuestionTimeOut = () => {
@@ -51,13 +56,15 @@ const InGame = () => {
             <p className="font-kdam text-4xl">Q{currentQuestionIndex + 1}</p>
           </div>
         </div>
-        <div className="h-[55%] relative z-0">
+        <div className="h-[55%] relative">
           <TimerQuestionDisplay isPaused={isPaused} isFastDisplay={isFastDisplay}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>
           {showChoices && <Choices onAnswerTimeOut={onAnswerTimeOut} onSelectChoice={onSelectChoice} />}
         </div>
+        <Answering showChoices={showChoices} isAnswering={isAnswering} />
+        <AnswerAnimation isCorrect={isCorrect} />
     </div>
   )
 }
