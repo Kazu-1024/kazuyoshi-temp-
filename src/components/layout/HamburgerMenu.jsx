@@ -38,7 +38,7 @@ const HamburgerMenu = () => {
 
       {/* メニュー */}
       {isOpen && (
-        <div className="fixed inset-0  flex-col items-center justify-center z-20 pt-60 pl-11 pr-4 bg-gray-500 bg-opacity-50">
+        <div className="fixed inset-0  flex-col items-center justify-center z-20 pt-[45%] pl-11 pr-4 bg-gray-500 bg-opacity-50">
           <div className='rounded-t-lg bg-gray-700  shadow-lg w-11/12 max-w-md pt-1 flex z-10'>
             <img src={hamburgerIcon} alt="" className='ml-2 mt-2 h-4 w-1/12' />
             <p className='mt-1 ml-5 text-white font-bold'>MENU</p>

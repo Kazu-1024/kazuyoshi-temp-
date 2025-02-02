@@ -1,6 +1,7 @@
 import React, {useState} from 'react'
 import HamburgerMenu from './HamburgerMenu'
 import MTH from '../../assets/images/MTH.png'
+import defaultIcon from '../../assets/images/defaultIcon.png'
 import Notifications from './Notifications'
 
 const Header = () => {
@@ -12,7 +13,7 @@ const Header = () => {
         <HamburgerMenu />
         <Notifications />
       </div>
-      <img src={MTH} alt="" className="rounded-full h-12 w-12 ml-auto mr-5" />
+      <img src={defaultIcon} alt="" className="rounded-full border-2 border-black h-12 w-12 ml-auto mr-5" />
     </>
   )
 }

@@ -30,15 +30,15 @@ const Home = () => {
       <Dropdown selectedOption={selectedOption} setOptionSelect={handleOptionSelect} />
 
       {/* 画像とボタン */}
-      <div className="relative flex flex-col items-center justify-center h-auto w-11/12 mx-auto mt-10">
-        <img src={selectStyle} className="object-cover" alt="Style Select" />
-        <button className="absolute bottom-0 transform -translate-y-1/2 w-1/2 h-16 flex items-center justify-center" onClick={() => navigate('/Matching')}>
+      <div className="relative flex flex-col items-center justify-center aspect-square w-9/12 max-h-96 mx-auto mt-5">
+        <img src={selectStyle} className="w-full h-full object-contain" alt="Style Select" />
+        <button className="absolute bottom-[8%] transform -translate-y-1/2 w-1/2 h-[20px] flex items-center justify-center aspect-[5/1]" onClick={() => navigate('/Matching')}>
           <img src={startButton} alt="Start Button" className="object-cover" />
         </button>
       </div>
 
       {/* ヘルプボタン */}
-      <div className="absolute bottom-20 left-2 mb-2">
+      <div className="absolute bottom-[10%] left-2 mb-2">
         <button onClick={() => {
           console.log('ヘルプボタンがクリックされました');
         }}>
