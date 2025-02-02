@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const WebSocketContext = createContext(null);
 
@@ -6,6 +7,7 @@ export const WebSocketProvider = ({ children }) => {
     const [ws, setWs] = useState(null);
     const [messageData, setMessageData] = useState(null);
     const [isconected, setIsconected] = useState(null);
+      const navigate = useNavigate();
     const url = "ws://localhost:8080/matchmaking";
   
     useEffect(() => {
@@ -20,12 +22,14 @@ export const WebSocketProvider = ({ children }) => {
   
       websocket.onmessage = (event) => {
         const responseData = JSON.parse(event.data);
+        console.log("コンテキストで受け取ったメッセージ",responseData);
         setMessageData(responseData); // メッセージデータを更新
       };
   
       websocket.onclose = () => {
         console.log("WebSocket切断");
         setWs(null);
+        navigate('/');
       };
   
       websocket.onerror = (error) => console.error("WebSocketエラー:", error);

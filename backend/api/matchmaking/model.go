@@ -36,7 +36,7 @@ type GameState struct {
 type Question struct {
 	ID            int      `json:"id"`
 	QuestionText  string   `json:"question_text"`
-	Questiontype  string   `json:"question_type`
+	QuestionType  string   `json:"question_type"`
 	Choices       []string `json:"choices"`
 	CorrectAnswer string   `json:"correct_answer"`
 }

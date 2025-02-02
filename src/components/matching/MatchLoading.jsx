@@ -9,9 +9,11 @@ const MatchLoading = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const roomId = location.state?.roomId;
+  const isHost = location.state?.isHost;
   const [userRate, setUserRate] = useState(1500);
   const [error, setError] = useState(null);
-
+  
+  console.log(location.state);
   useEffect(() => {
     if (!roomId) {
       setError('Room IDが見つかりません');
@@ -37,17 +39,19 @@ const MatchLoading = () => {
 
     // 2秒後にInGame画面に遷移
     const timer = setTimeout(() => {
+      console.log(isHost);
       navigate('/ingame', { 
         state: { 
           roomId: roomId,
           ws: location.state?.ws,
-          opponentRate: userRate
+          opponentRate: userRate,
+          isHost: isHost,
         }
       });
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [roomId, navigate, userRate]);
+  }, [roomId, navigate, userRate, isHost]);
 
   if (error) {
     return <div className="text-center mt-10 text-red-500">{error}</div>;

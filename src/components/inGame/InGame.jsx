@@ -25,6 +25,7 @@ const InGame = () => {
   const { ws, messageData } = useWebSocket();
   const [question, setQuestion] = useState({
     id: 0,
+    questionType: '',
     questionText: '',
     choices: [],
     correctAnswer: ''
@@ -33,6 +34,8 @@ const InGame = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const roomId = location.state?.roomId;
+  const isHost = location.state?.isHost;
+  console.log(location.state);
 
 
 
@@ -45,18 +48,14 @@ const InGame = () => {
     };
 
     const username = getCookie('username');
+    console.log(username);
     if (username) {
-      setPlayerId(username);
       // LocalStorageにユーザー名を保存
       localStorage.setItem('playerName', username);
+      setPlayerId(username);
+      console.log(playerId);
     }
-
-    ws.send(JSON.stringify({
-      type: 'game_start',
-      roomId: roomId,
-      playerId: playerId
-    }));
-  }, []);
+  }, [playerId]);
 
   // WebSocket接続の確立
   useEffect(() => {
@@ -68,7 +67,8 @@ const InGame = () => {
     const maxReconnectAttempts = 5;
     const reconnectInterval = 3000; // 3秒
         try {
-          const data = JSON.parse(messageData.data);
+
+          const data = messageData;
           console.log('受信したメッセージの詳細:', data);
 
           if (data.status === 'game_start' && data.questions) {
@@ -93,7 +93,7 @@ const InGame = () => {
               correctAnswer: q.correct_answer || ''
             }));
             
-            question(formattedQuestions);
+            setQuestion(formattedQuestions);
             if (formattedQuestions.length > 0) {
               setQuestion(formattedQuestions[0]);
             }
@@ -153,7 +153,7 @@ const InGame = () => {
         ws.current.close();
       }
     };
-  }, );
+  },[messageData, playerId]);
 
   const onAnswerTimeOut = () => {
     console.log('解答のタイムアウト');
@@ -190,11 +190,14 @@ const InGame = () => {
   };
 
   const onNextQuestion = () => {
-    setCurrentQuestionIndex((prev) => prev + 1);
+    console.log(question);
+    setCurrentQuestionIndex(currentQuestionIndex+ 1);
+    setIsFastDisplay(false);
     setIsLocked(false);
     setIsPaused(false);
-    setIsFastDisplay(false);
+    setQuestion(question[currentQuestionIndex]);
     setAbleAnswer([{ opponent: true, player1Id: true }]);
+    console.log(currentQuestionIndex);
   };
 
   const onQuestionTimeOut = () => {
@@ -213,7 +216,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay isPaused={isPaused} isFastDisplay={isFastDisplay} onQuestionTimeOut={onQuestionTimeOut} ws={ws} />
+          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} isHost={isHost} />
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>

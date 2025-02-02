@@ -16,6 +16,7 @@ const Matching = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const { ws, messageData } = useWebSocket(); // WebSocketとメッセージデータを取得
+  const [isHost, setIsHost] = useState(false);
 
   // WebSocket接続の確立
   useEffect(() => {
@@ -26,7 +27,8 @@ const Matching = () => {
           // マッチングが成功したら、MatchLoadingコンポーネントに遷移
           navigate('/matchloading', { 
             state: { 
-              roomId: messageData.room_id 
+              roomId: messageData.room_id,
+              isHost: isHost,
             }
           });
           break;
@@ -45,6 +47,7 @@ const Matching = () => {
           break;
         default:
           console.log('未処理のメッセージタイプ:', messageData.status);
+          setIsHost(true);
     }
     
     }

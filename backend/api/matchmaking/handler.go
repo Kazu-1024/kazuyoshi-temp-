@@ -83,6 +83,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchResponse := map[string]string{
 			"status":  "matched",
 			"room_id": matchedRoom.ID,
+			"PlayerId": cookie.Value,
 		}
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
@@ -109,6 +110,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	conn.WriteJSON(map[string]string{
 		"status":  "waiting",
 		"room_id": newRoom.ID,
+		"playerId": newRoom.PlayerID,
 	})
 
 	var message map[string]interface{}
@@ -137,13 +139,6 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("roomId が見つからないか、型が正しくありません")
 			}
 		}
-
-		// マッチングを待機
-	if waitForMatch(newRoom) {
-				// 部屋作成者（Player1）の場合のみゲームセッションを開始
-		handleGameSession(newRoom)
-	}
-
 
 		// 部屋作成者（Player1）の場合のみゲームセッションを開始
 		handleGameSession(newRoom)
@@ -202,7 +197,7 @@ func handleGameSession(room *Room) {
 		"questions": questions,
 		"opponent":  room.Player2ID,
 		"player1Id": room.PlayerID,
-		"startTime": time.Now(),
+		"gameStartTime": time.Now().Format(time.RFC3339),
 	}
 
 	room.Player1Conn.WriteJSON(startMessage)
@@ -213,8 +208,8 @@ func handleGameSession(room *Room) {
 		"message":   "対戦を開始します",
 		"questions": questions,
 		"opponent":  room.PlayerID,
-		"player1Id": room.PlayerID,
-		"startTime": time.Now(),
+		"player1Id": room.Player2ID,
+		"gameStartTime": time.Now().Format(time.RFC3339),
 	}
 
 	room.Player2Conn.WriteJSON(player2Message)
@@ -223,66 +218,6 @@ func handleGameSession(room *Room) {
 	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
 	go handlePlayerMessages(room.Player2Conn, room.Player2ID, room)
 
-	// メインゲームループ
-	for {
-		// select {
-		// case playerID := <-answerRights:
-		// 	// 早押し成功通知を両プレイヤーに送信
-		// 	answerMessage := map[string]interface{}{
-		// 		"status":   "answer_given",
-		// 		"playerId": playerID,
-		// 	}
-		// 	room.Player1Conn.WriteJSON(answerMessage)
-		// 	room.Player2Conn.WriteJSON(answerMessage)
-
-		// 	// プレイヤーの回答を待機
-		// 	var answerResult map[string]interface{}
-		// 	var answeredConn *websocket.Conn
-		// 	if playerID == room.PlayerID {
-		// 		answeredConn = room.Player1Conn
-		// 	} else {
-		// 		answeredConn = room.Player2Conn
-		// 	}
-
-		// 	// 接続を維持したまま、回答結果を読み取る
-		// 	if answeredConn != nil {
-		// 		err := answeredConn.ReadJSON(&answerResult)
-		// 		if err != nil {
-		// 			log.Printf("回答受信エラー: %v", err)
-		// 			// エラーが発生した場合、answer_unlockを送信してループを継続
-		// 			unlockMessage := map[string]interface{}{
-		// 				"status": "answer_unlock",
-		// 			}
-		// 			room.Player1Conn.WriteJSON(unlockMessage)
-		// 			room.Player2Conn.WriteJSON(unlockMessage)
-		// 			continue
-		// 		}
-		// 	}
-
-		// 	// 受信した回答結果をログに出力
-		// 	log.Printf("受信した回答結果: %+v", answerResult)
-
-		// 	// 回��結果を処理
-		// 	isCorrect := answerResult["correct"].(bool)
-
-		// 	// 誤答の場合、answer_unlockを送信
-		// 	if !isCorrect {
-		// 		unlockMessage := map[string]interface{}{
-		// 			"status": "answer_unlock",
-		// 		}
-		// 		room.Player1Conn.WriteJSON(unlockMessage)
-		// 		room.Player2Conn.WriteJSON(unlockMessage)
-		// 	}
-		// 	// 正解の場合 next_questionをおくる
-		// 	if isCorrect {
-		// 		nextQuestionMessage := map[string]interface{}{
-		// 			"status": "next_question",
-		// 		}
-		// 		room.Player1Conn.WriteJSON(nextQuestionMessage)
-		// 		room.Player2Conn.WriteJSON(nextQuestionMessage)
-		// 	}
-		// }
-	}
 }
 
 func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
@@ -355,6 +290,14 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 				"playerId" : playerID,
 			}
 			room.Player1Conn.WriteJSON(surrenderMessage)
+		} else if message["type"] == "settingTimer"{
+			log.Print("タイマースタート")
+			setTimer := map[string]interface{}{
+				"startTime": time.Now().Format(time.RFC3339),
+				"PlayerId": playerID,
+			}
+			room.Player1Conn.WriteJSON(setTimer)
+			room.Player2Conn.WriteJSON(setTimer)
 		}
 	}
 }
@@ -464,7 +407,7 @@ func fetchQuestions(count int) ([]Question, error) {
 		`, id).Scan(
 			&q.ID,
 			&q.QuestionText,
-			&q.Questiontype,
+			&q.QuestionType,
 			&q.CorrectAnswer,
 			&choice1,
 			&choice2,
