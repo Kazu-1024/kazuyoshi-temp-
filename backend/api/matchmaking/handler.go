@@ -122,6 +122,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if message["status"] == "match_cancel" {
+			log.Print("ルーム削除要請")
 			cancelMessage := map[string]interface{}{
 				"status": "cancel",
 			}

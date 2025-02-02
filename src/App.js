@@ -13,6 +13,7 @@ import CreateQuestions from "./components/CreateQuestions";
 import CreateQuestions_details from "./components/CreateQuestions_details";
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import { WebSocketProvider } from './WebSocketContext';
 
 function App() {
   const location = useLocation();
@@ -41,10 +42,10 @@ function App() {
               <Route path="/CreateQuestions" element={<CreateQuestions />} />
               <Route path="/CreateQuestions_details" element={<CreateQuestions_details />} />
               {/* 対戦 */}
-              <Route path="/InGame" element={<InGame />} />
-              <Route path="/Matching" element={<Matching />} />
-              <Route path="/MatchLoading" element={<MatchLoading />}/>
-              <Route path="/Result" element={<Result />} />
+              <Route path="/InGame" element={<WebSocketProvider><InGame /></WebSocketProvider>} />
+              <Route path="/Matching" element={<WebSocketProvider><Matching /></WebSocketProvider>} />
+              <Route path="/MatchLoading" element={<WebSocketProvider><MatchLoading /></WebSocketProvider>}/>
+              <Route path="/Result" element={<WebSocketProvider><Result /></WebSocketProvider>} />
             </Routes>
           </main>
           {!hideFooterPaths.includes(location.pathname) && (
@@ -60,7 +61,7 @@ function App() {
 export default function RootApp() {
   return (
     <Router>
-      <App />
+        <App />
     </Router>
   );
 }
