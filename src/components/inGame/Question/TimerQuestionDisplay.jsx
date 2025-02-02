@@ -1,19 +1,21 @@
 import React, {useState, useEffect, useRef} from 'react'
 import ShortQuestion from './ShortQuestion'
 
-const TimerQuestionDisplay = ({ questionText, isPaused, isFastDisplay }) => {
+const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws }) => {
   const [timeLeft, setTimeLeft] = useState(20);
   const [displayText, setDisplayText] = useState("");
-  const [isQuestionFullyDisplayed, setIsQuestionFullyDisplayed] = useState(false);
+  const [isTimerReady, setIsTimerReady] = useState(false);
   const [startTime, setStartTime] = useState(null);
 
   const displayTextTimerRef = useRef(null);
   const timerRef = useRef(null);
   const indexRef = useRef(0); // 現在の表示位置を保持
 
+  // リスニングの時はこの文字の表示は動かさない
+
   // 文字を1文字ずつ表示（問題文の表示中はタイマーを動かさない）
   // useEffect(() => {
-  //   if (!questionText || isQuestionFullyDisplayed) return;
+  //   if (!questionText || isTimerReady || type === "listening") return;
     
   //   if (!isPaused) {
   //     displayTextTimerRef.current = setInterval(() => {
@@ -25,7 +27,7 @@ const TimerQuestionDisplay = ({ questionText, isPaused, isFastDisplay }) => {
   //         } else {
   //           clearInterval(displayTextTimerRef.current);
   //           displayTextTimerRef.current = null;
-  //           setIsQuestionFullyDisplayed(true);
+  //           setIsTimerReady(true);
 
   //           // すべて表示されたらタイマー開始
   //           if (!startTime) {
@@ -47,7 +49,7 @@ const TimerQuestionDisplay = ({ questionText, isPaused, isFastDisplay }) => {
 
   // // タイマー処理（問題文が全て表示されていないと動かない）
   // useEffect(() => {
-  //   if (!isQuestionFullyDisplayed || !startTime) return;
+  //   if (!isReady || !startTime) return;
 
   //   if (!isPaused) {
   //     const updateTimer = () => {
@@ -71,17 +73,25 @@ const TimerQuestionDisplay = ({ questionText, isPaused, isFastDisplay }) => {
   //       clearInterval(timerRef.current);
   //     }
   //   };
-  // }, [isQuestionFullyDisplayed, isPaused, startTime]);
+  // }, [isTimerReady, isPaused, startTime]);
 
+  const renderQuestion = () => {
+    switch (type) {
+      case "short":
+        return <ShortQuestion displayText={displayText} choices={choices} />;
+      case "long":
+        return <LongQuestion displayText={displayText} choices={choices} />;
+      case "listening":
+        return <ListeningQuestion questionText={questionText} choices={choices} isPaused={isPaused} ws={ws} setIsTimerReady={setIsTimerReady}/>;
+      default:
+        return console.error("問題のタイプが変やねん");
+    }
+  }
 
   return (
     <>
       <progress value={(timeLeft / 20) * 100} max="100" className="absolute top-0 left-0 w-full h-[3%] z-10 appearance-none"/>
-
-      <div className="absolute w-11/12 h-[94%] bottom-0 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30 ">
-        <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
-        <ShortQuestion displayText={displayText} choices={["Option 1", "Option 2", "Option 3", "Option 4"]}/>
-      </div>
+      {renderQuestion()}
     </>
   )
 }
