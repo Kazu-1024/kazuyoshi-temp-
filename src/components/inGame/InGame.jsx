@@ -23,16 +23,17 @@ const InGame = () => {
   const [isCorrect, setIsCorrect] = useState(null); // 解答が正解かどうか
   const [playerId, setPlayerId] = useState(null);
   const { ws, messageData } = useWebSocket();
-  const [question, setQuestion] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState({
+  const [question, setQuestion] = useState({
     id: 0,
     questionText: '',
     choices: [],
     correctAnswer: ''
   });  // 現在の問題
+  const [ableAnswer, setAbleAnswer] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const roomId = location.state?.roomId;
+
 
 
   // クッキーからusernameを取得してLocalStorageに保存するuseEffect
@@ -80,6 +81,7 @@ const InGame = () => {
               } else {
                 localStorage.setItem('enemyName', data.opponent);
               }
+              setAbleAnswer([{ opponent: true, player1Id: true }]);
             }
             
             console.log('問題データを受信:', data.questions);
@@ -93,7 +95,7 @@ const InGame = () => {
             
             question(formattedQuestions);
             if (formattedQuestions.length > 0) {
-              setCurrentQuestion(formattedQuestions[0]);
+              setQuestion(formattedQuestions[0]);
             }
           } else if (data.status === 'answer_given') {
             console.log('answer_given case に入りました');
@@ -101,7 +103,10 @@ const InGame = () => {
             if (answeredPlayerId === playerId) {
                 console.log("回答権を獲得しました選択しをクリックしてください");
                 setShowChoices(true);
+            }else{
+                setIsAnswering(true);
             }
+            setAbleAnswer([{answeredPlayerId : false}]);
             setIsPaused(true);
             setIsLocked(true);
           } else if (data.status === 'answer_unlock') {
@@ -110,14 +115,13 @@ const InGame = () => {
             if (answeredPlayerId !== playerId) {
               // 相手が不正解の場合
               setHpB(prevHp => prevHp - 1);
-            }
-            
-            if (answeredPlayerId === playerId) {
+            }else{
               console.log('answer_unlock case に入りました,回答権を失います');
-              setIsPaused(false);
-            } else {
-              console.log('answer_unlock case に入りました,回答権が復活します');
-              setIsPaused(false);
+              setHpA(prevHp => prevHp - 1);
+            }
+            setIsPaused(false);
+            if (ableAnswer.every(item => item.opponent === false && item.player1Id === false)) {
+              setIsFastDisplay(true);
             }
           } else if (data.status === 'answer_correct') {
             console.log('answer_correct case に入りました');
@@ -130,40 +134,20 @@ const InGame = () => {
                 localStorage.setItem('enemyScore', newScore.toString());
                 return newScore;
               });
+            } else{
+              setScoreA(prevScore => {
+                const newScore = prevScore + 1;
+                localStorage.setItem('myScore', newScore.toString());
+                return newScore;
+              });
             }
             console.log(data.playerId + 'が正解しました');
             setIsPaused(false);
+            setIsFastDisplay(true);
           }
-
-          // 相手の解答結果を処理
-          if (data.status === 'answer_result') {
-            const answeredPlayerId = data.playerId;
-            
-            // 相手の解答の場合
-            if (answeredPlayerId !== playerId) {
-              if (data.correct) {
-                // 相手が正解した場合
-                setScoreB(prevScore => {
-                  const newScore = prevScore + 1;
-                  localStorage.setItem('enemyScore', newScore.toString());
-                  return newScore;
-                });
-              } else {
-                // 相手が不正解の場合
-                setHpB(prevHp => {
-                  const newHp = prevHp - 1;
-                  localStorage.setItem('enemyHp', newHp.toString());
-                  return newHp;
-                });
-              }
-            }
-          }
-
         } catch (error) {
           console.error('WebSocketメッセージの処理中にエラー:', error);
         }
-
-
     return () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         ws.current.close();
@@ -171,21 +155,26 @@ const InGame = () => {
     };
   }, );
 
-
-
-  const onQuestionTimeOut = () => {
-    console.log('問題のタイムアウト');
-  }
   const onAnswerTimeOut = () => {
     console.log('解答のタイムアウト');
+    ws.send(JSON.stringify({
+      type: 'answer_result',
+      roomId: roomId,
+      playerId: playerId,
+      answer: '時間切れ',
+      correct: false,
+    }));
     setShowChoices(false);
   };
   const onSelectChoice = (choice) => {
     console.log("選択肢:", choice);
+    const isCorrect = choice === question.correctAnswer;
     ws.send(JSON.stringify({
-      type: 'try_answer',
+      type: 'answer_result',
       roomId: roomId,
-      playerId: playerId
+      playerId: playerId,
+      answer: choice,
+      correct: isCorrect
     }));
     setShowChoices(false);
   };
@@ -205,6 +194,12 @@ const InGame = () => {
     setIsLocked(false);
     setIsPaused(false);
     setIsFastDisplay(false);
+    setAbleAnswer([{ opponent: true, player1Id: true }]);
+  };
+
+  const onQuestionTimeOut = () => {
+    console.log('問題のタイムアウト');
+    onNextQuestion();
   };
 
 
@@ -218,7 +213,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay isPaused={isPaused} isFastDisplay={isFastDisplay}/>
+          <TimerQuestionDisplay isPaused={isPaused} isFastDisplay={isFastDisplay} onQuestionTimeOut={onQuestionTimeOut} ws={ws} />
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>
