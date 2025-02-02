@@ -19,6 +19,21 @@ module.exports = {
         anton: ['Anton', 'sans-serif'],
         afacad: ['afacad', 'sans-serif'],
         jaro: ['jaro', 'sans-serif'],
+      },
+      height: {
+        'screen': [
+          '100vh','100dvh'
+        ]
+      },
+      minHeight: {
+        'screen': [
+          '100vh','100dvh'
+        ]
+      },
+      maxHeight: {
+        'screen': [
+          '100vh','100dvh'
+        ]
       }
     },
   },

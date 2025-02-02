@@ -28,7 +28,7 @@ function App() {
       <>
         <div className="flex flex-col min-h-screen h-screen">
           {!hideHeaderPaths.includes(location.pathname) && (
-            <header className="h-32 border-b-2 border-black flex items-center shadow-md relative">
+            <header className="h-[14%] border-b-2 border-black flex items-center shadow-md relative">
               <Header />
             </header>
           )}
@@ -51,7 +51,7 @@ function App() {
             </Routes>
           </main>
           {!hideFooterPaths.includes(location.pathname) && (
-            <footer className="fixed border-t-2 border-black bottom-0 flex justify-around w-full h-20 bg-white shadow-shadowTop">
+            <footer className="fixed border-t-2 border-black bottom-0 flex justify-around w-full h-[10%] bg-white shadow-shadowTop">
               <Footer />
             </footer>
           )}

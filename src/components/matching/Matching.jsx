@@ -139,13 +139,13 @@ const Matching = () => {
   //-------------------------------------------------------------------------
   return (
     <>
-      <div className="relative h-32 border-b-2 bg-white border-black shadow-md flex flex-col justify-center items-center">
+      <div className="relative h-[14%] border-b-2 bg-white border-black shadow-md flex flex-col justify-center items-center">
         <div className="w-5/6 border-t border-2 border-gray-300 mt-2" />
         <p className="font-notoSansJp font-bold text-4xl my-3">英検準一級</p>
         <div className="w-5/6 border-t border-2 border-gray-300" />
-        <img src={Tag1on1} className="absolute top-2 left-2" />
+        <img src={Tag1on1} className="absolute top-2 left-2 w-[27%]" />
       </div>
-      <div className="mt-16 flex justify-center" aria-label="読み込み中">
+      <div className="mt-[5%] flex justify-center" aria-label="読み込み中">
         {/*自分のアイコン、ランク、レート表示 */}
         <div className="mr-24">
           <img src={MTH} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
@@ -161,7 +161,7 @@ const Matching = () => {
         
       </div>
       {/*暗記カード*/}
-      <div className="mt-12 flex justify-center ">
+      <div className="mt-[4%] flex justify-center ">
         <div className="pt-2 rounded-t-2xl  w-11/12 bg-gradient-to-r from-gray-400 to-black flex justify-center">
           <img
             src={secHeader}
@@ -217,7 +217,7 @@ const Matching = () => {
         </div>
       </div>
 
-      <div className="flex justify-center mt-32">
+      <div className="flex justify-center mt-[8%]">
         <h1 className="mx-auto text-gray-500">対戦相手を探してます...</h1>
       </div>
       {/*キャンセルボタン */}
