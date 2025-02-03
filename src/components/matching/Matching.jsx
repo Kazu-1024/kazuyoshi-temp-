@@ -55,7 +55,7 @@ const Matching = () => {
       if (ws && ws.readyState === WebSocket.OPEN && messageData) {
         ws.send(JSON.stringify({
           room_id: messageData.room_id,
-          status: 'match_cancel'
+          type: 'match_cancel'
         }));
         console.log("マッチキャンセルのメッセージを送信しました");
       }
@@ -142,7 +142,7 @@ const Matching = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         room_id: messageData.room_id,
-        status: 'match_cancel'
+        type: 'match_cancel'
       }));
     }
   };

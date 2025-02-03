@@ -49,6 +49,7 @@ const MatchLoading = () => {
         }
       });
     }, 2000);
+    
 
     return () => clearTimeout(timer);
   }, [roomId, navigate, userRate, isHost]);

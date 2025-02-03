@@ -1,8 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react'
 import ShortQuestion from './ShortQuestion'
-import { useWebSocket } from '../../../WebSocketContext';
 
-const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, isHost}) => {
+const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect,isHost}) => {
   const [timeLeft, setTimeLeft] = useState(20);
   const [displayText, setDisplayText] = useState("");
   const [isTimerReady, setIsTimerReady] = useState(false);
@@ -32,18 +31,28 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
             displayTextTimerRef.current = null;
             setIsTimerReady(true);
             console.log(isHost);
+            console.log("isstop",isPaused);
+            
             // すべて表示されたらタイマー開始
-            if (!startTime && isHost) {
-              // ws.send(JSON.stringify({
-              //   type: 'settingTimer',
-              // }));
+            if (!startTime) {
+              ws.send(JSON.stringify({
+                type: 'settingTimer',
+              }));
             }
             setIsReady(true);
-            setStartTime(Date.now());
             ws.onmessage = (event) => {
-              setIsReady(true);
-              setStartTime(event.data.startTime);
-              console.log(event.data.startTime);
+              const data = JSON.parse(event.data)
+              if(data.status == "timer_start"){
+                setIsReady(true);
+                setStartTime(data.startTime);
+              }else if(data.status == 'answer_given'){
+                handleAnswerGiven(data);
+              }else if(data.status == 'answer_unlock'){
+                handleAnswerUnlock(data);
+              }else if(data.status == 'answer_correct'){
+                handleAnswerCorrect(data);
+              }
+              // console.log(event.data.startTime);
             };
 
             ws.onclose = (event) => {
@@ -68,22 +77,31 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
 
   // タイマー処理（問題文が全て表示されていないと動かない）
   useEffect(() => {
+    console.log("isReady",isReady,"startTime",startTime);
     if (!isReady || !startTime) return;
 
     if (!isPaused) {
       const updateTimer = () => {
         const now = Date.now();
         console.log(startTime);
-        const diff = 20 - Math.floor((now - startTime) / 1000);
+        const diff = (20 - Math.floor((now - startTime) / 1000));
         console.log(diff);
         if (diff <= 0) {
-          setTimeLeft(0);
-          setIsReady(false);
-          setStartTime(null);
-          setDisplayText(""); // 問題文のテキストをリセット
-          setTimeLeft(20);
-          onQuestionTimeOut();
+          // ステートを初期化
+          setTimeLeft(20);          // 初期化のタイマー設定
+          setIsReady(false);        // タイマーの準備状態をリセット
+          setStartTime(null);       // 開始時刻をリセット
+          setDisplayText("");       // 問題文をリセット
+          setIsTimerReady(false);   // タイマーの準備状態をリセット
+          
+          // 現在の表示位置をリセット
+          indexRef.current = 0;     // 現在の表示位置をリセット
+          
+          // タイマーの停止
           clearInterval(timerRef.current);
+        
+          // 問題のタイムアウト処理を実行
+          onQuestionTimeOut();  
         } else {
           setTimeLeft(diff);
         }

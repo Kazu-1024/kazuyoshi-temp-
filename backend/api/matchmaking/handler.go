@@ -1,16 +1,12 @@
 package matchmaking
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
-	"net/http/httptest"
 	"sync"
-	"sys3/api/rate"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -71,6 +67,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	
 
 	if matchedRoom != nil {
 		// マッチング成功時の処理
@@ -83,7 +80,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		matchResponse := map[string]string{
 			"status":  "matched",
 			"room_id": matchedRoom.ID,
-			"PlayerId": cookie.Value,
+			"player_id": cookie.Value,
 		}
 		matchedRoom.Player1Conn.WriteJSON(matchResponse)
 		conn.WriteJSON(matchResponse)
@@ -104,46 +101,19 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		IsMatched:   false,
 	}
 	rooms[newRoom.ID] = newRoom
+	
 	roomsMutex.Unlock()
 
 	// クライアントに待機状態を通知
 	conn.WriteJSON(map[string]string{
 		"status":  "waiting",
 		"room_id": newRoom.ID,
-		"playerId": newRoom.PlayerID,
+		"player_id": newRoom.PlayerID,
 	})
-
-	var message map[string]interface{}
-		er := conn.ReadJSON(&message)
-		if er != nil {
-			if websocket.IsUnexpectedCloseError(er, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("予期せぬ接続切断: %v", er)
-			}
-			// エラーが発生した場合でも、接続を閉じずにループを継続
-			return
-		}
-
-		if message["status"] == "match_cancel" {
-			log.Print("ルーム削除要請")
-			cancelMessage := map[string]interface{}{
-				"status": "cancel",
-			}
-
-			// 部屋作成者にキャンセルメッセージを送信
-			newRoom.Player1Conn.WriteJSON(cancelMessage)
-
-			// roomId を取得して削除
-			if roomId, ok := message["room_id"].(string); ok {
-				delete(rooms, roomId)
-			} else {
-				log.Println("roomId が見つからないか、型が正しくありません")
-			}
-		}
-
-		// 部屋作成者（Player1）の場合のみゲームセッションを開始
-		handleGameSession(newRoom)
-
-	// マッチングがタイムアウトした場合は、この時点で処理が終了する
+	//messageを監視する関数
+	go handlePlayerMessages(conn, cookie.Value, newRoom)
+	
+	select {}
 }
 
 func generateRoomID() string {
@@ -183,6 +153,10 @@ func waitForMatch(room *Room) bool {
 }
 
 func handleGameSession(room *Room) {
+	if room.Player1Conn == nil || room.Player2Conn == nil {
+        log.Println("Error: Player connection is nil before starting the game session")
+        return
+    }
 	// 問題を一括で取得
 	questions, err := fetchQuestions(10)
 	if err != nil {
@@ -200,7 +174,9 @@ func handleGameSession(room *Room) {
 		"gameStartTime": time.Now().Format(time.RFC3339),
 	}
 
-	room.Player1Conn.WriteJSON(startMessage)
+	if room.Player2Conn != nil {
+        room.Player1Conn.WriteJSON(startMessage)
+    }
 
 	// Player2用のメッセージを作成（opponentをPlayer1の名前に設定）
 	player2Message := map[string]interface{}{
@@ -211,8 +187,9 @@ func handleGameSession(room *Room) {
 		"player1Id": room.Player2ID,
 		"gameStartTime": time.Now().Format(time.RFC3339),
 	}
-
-	room.Player2Conn.WriteJSON(player2Message)
+	if room.Player1Conn != nil {
+        room.Player2Conn.WriteJSON(player2Message)
+    }
 
 	// 各プレイヤーのメッセージを監視
 	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
@@ -231,134 +208,125 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			// エラーが発生した場合でも、接続を閉じずにループを継続
 			return
 		}
-
-		if message["type"] == "try_answer" {
+		if message["type"] == "match_cancel"{
+			log.Print("ルーム削除要請")
+			cancelMessage := map[string]interface{}{
+				"status": "cancel",
+			}
+			room.Player1Conn.WriteJSON(cancelMessage)
+			if roomId, ok := message["room_id"].(string); ok {
+				delete(rooms, roomId)
+			} else {
+				log.Println("roomId が見つからないか、型が正しくありません")
+			}
+		}else if message["type"] == "try_answer" {
 			// 早押し成功通知を両プレイヤーに送信
+			log.Println("早押しボタンが押されました")
 			answerMessage := map[string]interface{}{
 				"status":   "answer_given",
-				"playerId": playerID,
-				"anserTime": time.Now(),
+				"player_id": playerID,
+				"anserTime": time.Now().UnixMilli(),
 			}
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)
-
-			// プレイヤーの回答を待機
-			var answerResult map[string]interface{}
-
-			// 接続を維持したまま、回答結果を読み取る
-			err := conn.ReadJSON(&answerResult)
-			if err != nil {
-				log.Printf("回答受信エラー: %v", err)
-				// エラーが発生した場合、answer_unlockを送信してループを継続
-				unlockMessage := map[string]interface{}{
-					"status": "answer_unlock",
-				}
-				room.Player1Conn.WriteJSON(unlockMessage)
-				room.Player2Conn.WriteJSON(unlockMessage)
-				continue
+		}else if message["correct"] == true {
+			//正解のときanswer_correctを送信する
+			answerCorrectMessage := map[string]interface{}{
+				"status":   "answer_correct",
+				"player_id": playerID,
 			}
-
-			// 受信した回答結果をログに出力
-			log.Printf("受信した回答結果: %+v", answerResult)
-
-			// 回答結果を処理
-			isCorrect := answerResult["correct"].(bool)
-
-			// 誤答の場合、answer_unlockを送信
-			if !isCorrect {
-				unlockMessage := map[string]interface{}{
-					"status":   "answer_unlock",
-					"playerId": playerID,
-					"unlockTime": time.Now(),
-				}
-				room.Player1Conn.WriteJSON(unlockMessage)
-				room.Player2Conn.WriteJSON(unlockMessage)
+			room.Player1Conn.WriteJSON(answerCorrectMessage)
+			room.Player2Conn.WriteJSON(answerCorrectMessage)
+		}else if message["correct"] == false {
+			//誤答の場合、answer_unlockを送信
+			unlockMessage := map[string]interface{}{
+				"status":   "answer_unlock",
+				"player_id": playerID,
+				"unlockTime": time.Now(),
 			}
-			// 正解の場合 answer_correctとplayerIdを送信
-			if isCorrect {
-				answerCorrectMessage := map[string]interface{}{
-					"status":   "answer_correct",
-					"playerId": playerID,
-				}
-				room.Player1Conn.WriteJSON(answerCorrectMessage)
-				room.Player2Conn.WriteJSON(answerCorrectMessage)
-			}
-			//切断されたとき　残っているplayerにdisconectedとplayerIdを送信
-		} else if message["type"] == "surrender"{
+			room.Player1Conn.WriteJSON(unlockMessage)
+			room.Player2Conn.WriteJSON(unlockMessage)
+		}else if message["type"] == "surrender"{
+			//ゲームを離れるとき、disconectedを送信
 			surrenderMessage := map[string]interface{}{
 				"status": "disconected",
-				"playerId" : playerID,
+				"player_id" : playerID,
 			}
 			room.Player1Conn.WriteJSON(surrenderMessage)
+			room.Player2Conn.WriteJSON(surrenderMessage)
 		} else if message["type"] == "settingTimer"{
+			//問題が表示され切った時、 
 			log.Print("タイマースタート")
 			setTimer := map[string]interface{}{
-				"startTime": time.Now().Format(time.RFC3339),
-				"PlayerId": playerID,
+				"status": "timer_start",
+				"startTime": time.Now().UnixMilli(),
+				"player_id": playerID,
 			}
 			room.Player1Conn.WriteJSON(setTimer)
 			room.Player2Conn.WriteJSON(setTimer)
+		}else{
+			log.Printf("想定されていないtypeが送信されました。処理を追加するかmassageを確認してください送られたtype[%d]",message["type"])
 		}
 	}
 }
 
 // 勝者を決定する関数
 
-func determineWinner(player1ID, player2ID string, score1, score2 int) map[string]string {
-	if score1 > score2 {
-		return map[string]string{
-			"id":       player1ID,
-			"loser_id": player2ID,
-			"message":  "Player 1の勝利！",
-			"endTime": time.Now().Format(time.RFC3339),
-		}
-	} else if score2 > score1 {
-		return map[string]string{
-			"id":       player2ID,
-			"loser_id": player1ID,
-			"message":  "Player 2の勝利！",
-			"endTime": time.Now().Format(time.RFC3339),
-		}
-	}
-	return map[string]string{
-		"id":      "draw",
-		"message": "引き分け",
-		"endTime": time.Now().Format(time.RFC3339),
-	}
-}
+// func determineWinner(player1ID, player2ID string, score1, score2 int) map[string]string {
+// 	if score1 > score2 {
+// 		return map[string]string{
+// 			"id":       player1ID,
+// 			"loser_id": player2ID,
+// 			"message":  "Player 1の勝利！",
+// 			"endTime": time.Now().Format(time.RFC3339),
+// 		}
+// 	} else if score2 > score1 {
+// 		return map[string]string{
+// 			"id":       player2ID,
+// 			"loser_id": player1ID,
+// 			"message":  "Player 2の勝利！",
+// 			"endTime": time.Now().Format(time.RFC3339),
+// 		}
+// 	}
+// 	return map[string]string{
+// 		"id":      "draw",
+// 		"message": "引き分け",
+// 		"endTime": time.Now().Format(time.RFC3339),
+// 	}
+// }
 
-// レート計算と更新
-func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
-	if winnerID == "draw" {
-		return // 引き分けの場合はレーティング更新なし
-	}
+// // レート計算と更新
+// func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
+// 	if winnerID == "draw" {
+// 		return // 引き分けの場合はレーティング更新なし
+// 	}
 
-	// レート更新のリクエストを作成
-	rateRequest := rate.RatingRequest{
-		WinnerID: winnerID,
-		LoserID:  loserID,
-		GameType: "quiz",
-	}
+// 	// レート更新のリクエストを作成
+// 	rateRequest := rate.RatingRequest{
+// 		WinnerID: winnerID,
+// 		LoserID:  loserID,
+// 		GameType: "quiz",
+// 	}
 
-	// レート計算ハンドラーを使用してレートを更新
-	handler := rate.CalculateRatingHandler(db)
+// 	// レート計算ハンドラーを使用してレートを更新
+// 	handler := rate.CalculateRatingHandler(db)
 
-	// リクエストを作成
-	reqBody, _ := json.Marshal(rateRequest)
-	req, _ := http.NewRequest("POST", "/calculate-rating", bytes.NewBuffer(reqBody))
+// 	// リクエストを作成
+// 	reqBody, _ := json.Marshal(rateRequest)
+// 	req, _ := http.NewRequest("POST", "/calculate-rating", bytes.NewBuffer(reqBody))
 
-	// レスポンスを受け取るためのRecorderを作成
-	w := httptest.NewRecorder()
+// 	// レスポンスを受け取るためのRecorderを作成
+// 	w := httptest.NewRecorder()
 
-	// ハンドラーを実行
-	handler.ServeHTTP(w, req)
+// 	// ハンドラーを実行
+// 	handler.ServeHTTP(w, req)
 
-	// エラーチェック
-	if w.Code != http.StatusOK {
-		log.Printf("レート更新エラー: %v", w.Body.String())
-		return
-	}
-}
+// 	// エラーチェック
+// 	if w.Code != http.StatusOK {
+// 		log.Printf("レート更新エラー: %v", w.Body.String())
+// 		return
+// 	}
+// }
 
 // InitDB データベース接続を初期化する
 func InitDB(database *sql.DB) {
