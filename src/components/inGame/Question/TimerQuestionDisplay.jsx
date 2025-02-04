@@ -86,7 +86,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
         console.log(startTime);
         const diff = (20 - Math.floor((now - startTime) / 1000));
         console.log(diff);
-        if (diff <= 0) {
+        if (diff <= 0 || isFastDisplay) {
           // ステートを初期化
           setTimeLeft(20);          // 初期化のタイマー設定
           setIsReady(false);        // タイマーの準備状態をリセット

@@ -186,7 +186,6 @@ const InGame = () => {
       setIsFastDisplay(true);
     }
   };
-  //正解したときの処理だけど今のchoiceだと通らない
   const handleAnswerCorrect = (data) => {
     const answeredPlayerId = data.player_id;
   
@@ -222,8 +221,10 @@ const InGame = () => {
     setShowChoices(false);
   };
   const onSelectChoice = (choice) => {
-    console.log("選択肢:", choice);
-    const isCorrect = choice === question.correctAnswer;
+    console.log(question.correctAnswer);
+    const myChoice = question.choices[choice - 1];
+    console.log("選択肢:", myChoice);
+    const isCorrect = myChoice === question.correctAnswer;
     ws.send(JSON.stringify({
       type: 'post_answer',
       roomId: roomId,

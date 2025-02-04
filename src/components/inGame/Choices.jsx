@@ -4,7 +4,7 @@ const Choices = ({ onAnswerTimeOut, onSelectChoice }) => {
 const [timeLeft, setTimeLeft] = useState(5);
 const progressMax = 5
 
-const choices = ['Choice 1', 'Choice 2', 'Choice 3', 'Choice 4'];
+const choices = ['1', '2', '3', '4'];
 
 const buttonClasses = "w-16 h-16 border-2 border-black rounded-lg py-2 bg-white shadow-lg hover:bg-gray-200 font-anton";
 

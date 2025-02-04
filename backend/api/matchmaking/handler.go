@@ -230,7 +230,7 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)
 		}else if message["correct"] == true {
-			//正解のときanswer_correctを送信する
+			log.Printf("%dが正解しました",playerID)
 			answerCorrectMessage := map[string]interface{}{
 				"status":   "answer_correct",
 				"player_id": playerID,
@@ -238,7 +238,7 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			room.Player1Conn.WriteJSON(answerCorrectMessage)
 			room.Player2Conn.WriteJSON(answerCorrectMessage)
 		}else if message["correct"] == false {
-			//誤答の場合、answer_unlockを送信
+			log.Printf("%dが間違えました",playerID)
 			unlockMessage := map[string]interface{}{
 				"status":   "answer_unlock",
 				"player_id": playerID,
