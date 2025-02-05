@@ -76,7 +76,7 @@ const Login = () => {
   return (
     <>
       <div className='flex justify-center'>
-        <img src={Luxon} alt="" className='mt-32'/>
+        <img src={Luxon} alt="" className='mt-16'/>
       </div>
       <div className="shadow-2xl bg-white rounded-2xl p-8  max-w-md mt-12 mx-6">
         <h2 className="text-2xl font-bold mb-4 text-center">{isLogin ? 'ログイン' : '新規作成'}</h2>
