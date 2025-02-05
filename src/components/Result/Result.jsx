@@ -33,15 +33,15 @@ const Result = () => {
     <>
       <div className="relative flex flex-col h-full">
         {/* リザルト画面のheader部分 */}
-        <div className="relative h-32 border-b-2 bg-white border-black shadow-md flex flex-col justify-center items-center">
+        <div className="relative h-[14%] border-b-2 bg-white border-black shadow-md flex flex-col justify-center items-center">
           <div className="w-5/6 border-t border-2 border-gray-300 mt-2" />
           <p className="font-notoSansJp font-bold text-4xl my-3">英検準一級</p>
           <div className="w-5/6 border-t border-2 border-gray-300" />
-          <img src={Tag1on1} className="absolute top-2 left-2" />
+          <img src={Tag1on1} className="absolute top-2 left-2 w-[27%]" />
         </div>
         {/* リザルト画面のmain部分 */}
         <div className="flex flex-col items-center flex-grow">
-          <img src={ResultText} className="mx-auto mt-14 mb-3" />
+          <img src={ResultText} className="mx-auto mt-[5dvh] mb-3" />
           <div className="flex items-center w-5/6">
             <div className="w-2 h-2 bg-black rounded-full" />
             <div className="flex-grow border-t border-2 border-black" />

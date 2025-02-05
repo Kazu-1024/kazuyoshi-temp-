@@ -31,7 +31,7 @@ const Dropdown = ({ selectedOption, setOptionSelect }) => {
 
         {/* プルダウンメニューの選択肢表示（isOpenがtrueの場合に表示） */}
         {isOpen && (
-          <div className={`absolute top-full left-0 w-56 bg-white border-2 ${isOpen ? "border-gray-800" : "border-gray-600"} rounded-xl shadow-xl z-10 ml-24 transition-all duration-300 ease-in-out`}>
+          <div className={`absolute top-full left-0 w-[200px] bg-white border-2 ${isOpen ? "border-gray-800" : "border-gray-600"} rounded-xl shadow-xl z-10 ml-24 transition-all duration-300 ease-in-out`}>
             {options.map((option) => (
               <div
                 key={option.value}
