@@ -30,10 +30,9 @@ func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
 
 		// データベースに問題を保存
 		_, err = db.Exec(
-			"INSERT INTO questions (creator_username, question_type, question_text, correct_answer, choice1, choice2, choice3, choice4, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO questions (creator_username, question_text, correct_answer, choice1, choice2, choice3, choice4, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			cookie.Value,
 			question.QuestionText,
-			question.QuestionType,
 			question.CorrectAnswer,
 			question.Choices[0],
 			question.Choices[1],
@@ -62,7 +61,7 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 
 		// データベースから問題を取得
 		rows, err := db.Query(`
-			SELECT id, creator_username, question_text, question_type, correct_answer, 
+			SELECT id, creator_username, question_text, correct_answer, 
 			       choice1, choice2, choice3, choice4, explanation 
 			FROM questions`)
 		if err != nil {
@@ -80,7 +79,6 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 				&q.ID,
 				&q.CreatorUsername,
 				&q.QuestionText,
-				&q.QuestionType,
 				&q.CorrectAnswer,
 				&choices[0],
 				&choices[1],
