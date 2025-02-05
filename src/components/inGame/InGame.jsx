@@ -22,13 +22,14 @@ const InGame = () => {
   const [isFastDisplay, setIsFastDisplay] = useState(false);  // 問題に正解してたらtrueにしたら問題文の表示が早くなるy
   const [isAnswering, setIsAnswering] = useState(false); // 対戦相手が解答中だったらtrueにしてね
   const [isCorrect, setIsCorrect] = useState(null); // 解答が正解かどうか
-  const [playerId, setPlayerId] = useState(null);
   const [timer, setTimer] = useState(null);
   const { ws, messageData } = useWebSocket();
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [ableAnswer, setAbleAnswer] = useState([]);
   const [gameEnded, setGameEnded] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
+  const [opponentId, setOpponentId] = useState(null);
   const [question, setQuestion] = useState({
     id: null,
     questionType: '',
@@ -54,13 +55,10 @@ const InGame = () => {
       // 対戦相手の名前を設定
       if (data.opponent) {
         console.log('対戦相手の名前を受信:', data.opponent);
-        if (data.opponent === playerId) {
           localStorage.setItem('enemyName', data.player1Id);
           localStorage.setItem('playerName', data.opponent);
-        } else {
-          localStorage.setItem('enemyName', data.opponent);
-          localStorage.setItem('playerName', data.player1Id);
-        }
+        setPlayerId(data.player1Id);
+        setOpponentId(data.opponent);
         setAbleAnswer([{ opponent: true, player1Id: true }]);
       }
   
@@ -103,7 +101,7 @@ const InGame = () => {
         ws.send(JSON.stringify({
           room_id: messageData.room_id,
           type: 'surrender',
-          player_id: localStorage.getItem("playerName"),
+          player_id: playerId,
         }));
         console.log("マッチキャンセルのメッセージを送信しました");
       }
@@ -157,8 +155,9 @@ const InGame = () => {
     console.log('answer_given case に入りました');
     console.log(data);
     console.log(playerId);
+    console.log(opponentId);
     const answeredPlayerId = data.player_id;
-    if (answeredPlayerId === localStorage.getItem("playerName")) {
+    if (answeredPlayerId === playerId) {
       console.log("回答権を獲得しました選択しをクリックしてください");
       setShowChoices(true);
     } else {
@@ -182,7 +181,7 @@ const InGame = () => {
     setIsPaused(false);
     setIsAnswering(false);
     console.log(ableAnswer);
-    if (ableAnswer.every(item => item.opponent === false && item.player1Id === false)) {
+    if (ableAnswer.every(item => item.opponent === false && item.playerId === false)) {
       setIsFastDisplay(true);
     }
   };
@@ -193,6 +192,7 @@ const InGame = () => {
       setScoreB(prevScore => {
         const newScore = prevScore + 1;
         localStorage.setItem('enemyScore', newScore.toString());
+        setIsAnswering(false);
         return newScore;
       });
     } else {
@@ -252,7 +252,7 @@ const InGame = () => {
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);
-      setAbleAnswer([{ opponent: true, player1Id: true }]);
+      setAbleAnswer([{ opponentId: true, playerId: true }]);
     }else{
       //ゲームの終了判定はまだしてない
     setGameEnded(true);
@@ -287,7 +287,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} isHost={isHost} />
+          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>
