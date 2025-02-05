@@ -32,6 +32,12 @@ type GameState struct {
 	Status    string // "waiting", "matched", "playing", "finished" など
 }
 
+// PlayerState ゲーム中のplayerの情報を管理する構造体
+type PlayerState struct {
+    HP    int
+    Point int
+}
+
 // Question ゲームの問題を管理する構造体
 type Question struct {
 	ID            int      `json:"id"`

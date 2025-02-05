@@ -14,6 +14,7 @@ import (
 
 var (
 	rooms      = make(map[string]*Room)
+	players    = make(map[string]*PlayerState)
 	roomsMutex sync.Mutex
 	upgrader   = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
@@ -152,6 +153,12 @@ func waitForMatch(room *Room) bool {
 	}
 }
 
+// プレイヤーの状態を設定
+func InitPlayers(room *Room) {
+	players[room.PlayerID] = &PlayerState{HP: 5, Point: 0}
+	players[room.Player2ID] = &PlayerState{HP: 5, Point: 0}
+}
+
 func handleGameSession(room *Room) {
 	if room.Player1Conn == nil || room.Player2Conn == nil {
         log.Println("Error: Player connection is nil before starting the game session")
@@ -163,6 +170,8 @@ func handleGameSession(room *Room) {
 		log.Printf("問題取得エラー: %v", err)
 		return
 	}
+
+	go InitPlayers(room)
 
 	// ゲーム開始メッセージと問題データを送信
 	startMessage := map[string]interface{}{
@@ -190,6 +199,8 @@ func handleGameSession(room *Room) {
 	if room.Player1Conn != nil {
         room.Player2Conn.WriteJSON(player2Message)
     }
+
+	log.Print(players[room.PlayerID])
 
 	// 各プレイヤーのメッセージを監視
 	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)

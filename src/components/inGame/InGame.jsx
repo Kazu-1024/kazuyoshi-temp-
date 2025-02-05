@@ -30,6 +30,7 @@ const InGame = () => {
   const [gameEnded, setGameEnded] = useState(null);
   const [playerId, setPlayerId] = useState(null);
   const [opponentId, setOpponentId] = useState(null);
+  const [isStarted, setIsStarted] = useState(null);
   const [question, setQuestion] = useState({
     id: null,
     questionType: '',
@@ -46,7 +47,9 @@ const InGame = () => {
   useEffect(() => {
     let data = messageData;
     console.log('受信したメッセージの詳細:', data);
-  
+    // if(isStarted){
+    //   return
+    // }
     if (data.status === 'game_start' && data.questions) {
       // playerIdの設定を確認
       setPlayerId(data.player1Id);
@@ -75,6 +78,7 @@ const InGame = () => {
       if (formattedQuestions.length > 0) {
         setQuestion(formattedQuestions[currentQuestionIndex]); // 最初の問題を設定
       }
+      // setIsStarted(true);
     }
   }, [messageData, playerId,currentQuestionIndex]);  // messageDataとplayerIdを依存配列に追加
   
