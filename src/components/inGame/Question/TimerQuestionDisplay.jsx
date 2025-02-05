@@ -2,7 +2,7 @@ import React, {useState, useEffect, useRef} from 'react'
 import ShortQuestion from './ShortQuestion'
 
 const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect,isHost}) => {
-  const [timeLeft, setTimeLeft] = useState(20);
+  const [timeLeft, setTimeLeft] = useState(100);
   const [displayText, setDisplayText] = useState("");
   const [isTimerReady, setIsTimerReady] = useState(false);
   const [startTime, setStartTime] = useState(null);
@@ -65,7 +65,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
             return prev;
           }
         });
-      }, isFastDisplay ? 50 : 200);
+      }, isFastDisplay ? 10 : 20);
     }
 
     return () => {
@@ -83,12 +83,11 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
     if (!isPaused) {
       const updateTimer = () => {
         const now = Date.now();
-        console.log(startTime);
-        const diff = (20 - Math.floor((now - startTime) / 1000));
+        const diff = (100 - Math.floor((now - startTime) / 100));
         console.log(diff);
         if (diff <= 0 || isFastDisplay) {
           // ステートを初期化
-          setTimeLeft(20);          // 初期化のタイマー設定
+          setTimeLeft(100);          // 初期化のタイマー設定
           setIsReady(false);        // タイマーの準備状態をリセット
           setStartTime(null);       // 開始時刻をリセット
           setDisplayText("");       // 問題文をリセット
@@ -104,11 +103,12 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
           onQuestionTimeOut();  
         } else {
           setTimeLeft(diff);
+          console.log("残り時間更新");
         }
       };
 
       updateTimer();
-      timerRef.current = setInterval(updateTimer, 1000);
+      timerRef.current = setInterval(updateTimer, 100);
     }
 
     return () => {
@@ -134,7 +134,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
   return (
     
     <>
-      <progress value={(timeLeft / 20) * 100} max="100" className="absolute top-0 left-0 w-full h-[3%] z-10 appearance-none"/>
+      <progress value={timeLeft} max="100" className="absolute top-0 left-0 w-full h-[3%] z-10 appearance-none"/>
       {/* {renderQuestion()} */}<ShortQuestion displayText={displayText} choices={choices} />;
     </>
   )
