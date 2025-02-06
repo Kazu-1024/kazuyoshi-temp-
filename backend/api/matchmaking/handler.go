@@ -161,7 +161,7 @@ func InitPlayers(room *Room) {
 
 func handleGameSession(room *Room) {
 	if room.Player1Conn == nil || room.Player2Conn == nil {
-        log.Println("Error: Player connection is nil before starting the game session")
+        log.Println("playerがそろっていないためゲームを開始できません")
         return
     }
 	// 問題を一括で取得
@@ -171,7 +171,7 @@ func handleGameSession(room *Room) {
 		return
 	}
 
-	go InitPlayers(room)
+	InitPlayers(room)
 
 	// ゲーム開始メッセージと問題データを送信
 	startMessage := map[string]interface{}{
@@ -242,19 +242,36 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 			room.Player2Conn.WriteJSON(answerMessage)
 		}else if message["correct"] == true {
 			log.Printf("%dが正解しました",playerID)
+			players[playerID].Point += 1
+			if players[playerID].Point >= 5 {
+				// ポイントが5に達したら勝敗判定を実行
+				determineWinner(room, "point_reached")
+				return
+			}
+
 			answerCorrectMessage := map[string]interface{}{
 				"status":   "answer_correct",
 				"player_id": playerID,
 			}
+
 			room.Player1Conn.WriteJSON(answerCorrectMessage)
 			room.Player2Conn.WriteJSON(answerCorrectMessage)
 		}else if message["correct"] == false {
 			log.Printf("%dが間違えました",playerID)
+			players[playerID].HP -= 1
+			if players[playerID].HP <= 0 {
+				// HPが0になったら勝敗判定を実行
+				determineWinner(room, "hp_zero")
+				return
+			}
+
 			unlockMessage := map[string]interface{}{
 				"status":   "answer_unlock",
 				"player_id": playerID,
 				"unlockTime": time.Now(),
 			}
+			log.Print(players[playerID])
+
 			room.Player1Conn.WriteJSON(unlockMessage)
 			room.Player2Conn.WriteJSON(unlockMessage)
 		}else if message["type"] == "surrender"{
@@ -283,28 +300,64 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 
 // 勝者を決定する関数
 
-// func determineWinner(player1ID, player2ID string, score1, score2 int) map[string]string {
-// 	if score1 > score2 {
-// 		return map[string]string{
-// 			"id":       player1ID,
-// 			"loser_id": player2ID,
-// 			"message":  "Player 1の勝利！",
-// 			"endTime": time.Now().Format(time.RFC3339),
-// 		}
-// 	} else if score2 > score1 {
-// 		return map[string]string{
-// 			"id":       player2ID,
-// 			"loser_id": player1ID,
-// 			"message":  "Player 2の勝利！",
-// 			"endTime": time.Now().Format(time.RFC3339),
-// 		}
-// 	}
-// 	return map[string]string{
-// 		"id":      "draw",
-// 		"message": "引き分け",
-// 		"endTime": time.Now().Format(time.RFC3339),
-// 	}
-// }
+func determineWinner(room *Room, reason string) {
+	player1 := players[room.PlayerID]
+	player2 := players[room.Player2ID]
+
+	var winnerID, loserID, message string
+
+	if player1.HP <= 0 {
+		winnerID = room.Player2ID
+		loserID = room.PlayerID
+		message = fmt.Sprintf("%sのHPが0になったため、%sの勝利!", loserID, winnerID)
+	} else if player2.HP <= 0 {
+		winnerID = room.PlayerID
+		loserID = room.Player2ID
+		message = fmt.Sprintf("%sのHPが0になったため、%sの勝利!", loserID, winnerID)
+	} else if player1.Point >= 5 {
+		winnerID = room.PlayerID
+		loserID = room.Player2ID
+		message = fmt.Sprintf("%sが5ポイント獲得!勝利!", winnerID)
+	} else if player2.Point >= 5 {
+		winnerID = room.Player2ID
+		loserID = room.PlayerID
+		message = fmt.Sprintf("%sが5ポイント獲得!勝利!", winnerID)
+	} else if reason == "lastQuestion" {
+		// 最終問題の判定
+		if player1.Point > player2.Point {
+			winnerID = room.PlayerID
+			loserID = room.Player2ID
+			message = fmt.Sprintf("最終問題終了!%sのポイントが多いため勝利!", winnerID)
+		} else if player2.Point > player1.Point {
+			winnerID = room.Player2ID
+			loserID = room.PlayerID
+			message = fmt.Sprintf("最終問題終了!%sのポイントが多いため勝利!", winnerID)
+		} else {
+			message = "draw"
+		}
+	} else {
+		return
+	}
+
+	// 勝敗メッセージ送信
+	winnerMessage := map[string]interface{}{
+		"status":   "game_end",
+		"winner":   winnerID,
+		"loser":    loserID,
+		"message":  message,
+	}
+
+	room.Player1Conn.WriteJSON(winnerMessage)
+	room.Player2Conn.WriteJSON(winnerMessage)
+
+	// ルーム削除
+	roomsMutex.Lock()
+	delete(rooms, room.ID)
+	roomsMutex.Unlock()
+}
+
+
+
 
 // // レート計算と更新
 // func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {

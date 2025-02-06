@@ -147,6 +147,8 @@ const InGame = () => {
         handleAnswerCorrect(data);
       }else if(data.status == 'timer_start'){
         setTimer(20);
+      }else if(data.status == 'game_end'){
+        onGameEnd(data);
       }else{
         console.log('未知のステータス:', data.status);
       }
@@ -177,11 +179,11 @@ const InGame = () => {
   
     if (answeredPlayerId !== playerId) {
       setHpB(prevHp => prevHp - 1);
-      setIsLocked(false);
     } else {
       console.log('回答権を失います');
       setHpA(prevHp => prevHp - 1);
     }
+    setIsLocked(!ableAnswer[answeredPlayerId])
     setIsPaused(false);
     setIsAnswering(false);
     console.log(ableAnswer);
@@ -258,19 +260,7 @@ const InGame = () => {
       setIsPaused(false);
       setAbleAnswer([{ opponentId: true, playerId: true }]);
     }else{
-      //ゲームの終了判定はまだしてない
-    setGameEnded(true);
-      setTimeout(() => {
-        navigate('/result', { 
-          state: { 
-            result: {
-              winner: scoreA > scoreB ? 'playerA' : 'playerB',
-              scoreA: scoreA,
-              scoreB: scoreB
-            }
-          } 
-        });
-      }, 2000);
+      onGameEnd("lastQuestion");
     }
   };
   
@@ -278,6 +268,26 @@ const InGame = () => {
   const onQuestionTimeOut = () => {
     console.log('問題のタイムアウト');
     onNextQuestion();
+  };
+
+  const onGameEnd = (data) => {
+    //ゲームの終了判定はまだしてない
+  setGameEnded(true);
+  const reason = data.reason;
+  let result;
+  if (reason === "hp_zero") {
+    result = {  winner: data.winner};
+  } else if (reason === "point_reached") {
+    result = {  winner: data.winner };
+  } else {
+    // それ以外はスコアで勝者を決定
+    result = { winner: scoreA > scoreB ? playerId : opponentId };
+  }
+  setTimeout(() => {
+    navigate('/result', { 
+      state: { result } 
+    });
+  }, 2000);
   };
 
 
@@ -291,7 +301,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
+          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>

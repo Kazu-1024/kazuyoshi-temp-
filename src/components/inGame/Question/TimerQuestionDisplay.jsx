@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react'
 import ShortQuestion from './ShortQuestion'
 
-const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect,isHost}) => {
+const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd, isHost}) => {
   const [timeLeft, setTimeLeft] = useState(100);
   const [displayText, setDisplayText] = useState("");
   const [isTimerReady, setIsTimerReady] = useState(false);
@@ -51,6 +51,8 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
                 handleAnswerUnlock(data);
               }else if(data.status == 'answer_correct'){
                 handleAnswerCorrect(data);
+              }else if(data.status == 'game_end'){
+                onGameEnd(data);
               }
               // console.log(event.data.startTime);
             };
