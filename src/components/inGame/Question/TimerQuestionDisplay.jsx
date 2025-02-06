@@ -51,8 +51,6 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
               }else if(data.status == 'answer_unlock'){
                 handleAnswerUnlock(data);
               }else if(data.status == 'answer_correct'){
-                setIsReady(false);
-                setStartTime(null);
                 handleAnswerCorrect(data);
               }else if(data.status == 'game_end'){
                 onGameEnd(data);
@@ -89,7 +87,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
       const updateTimer = () => {
         const now = Date.now();
         const diff = (100 - Math.floor((now - startTime) / 100));
-        console.log(diff);
+        // console.log(diff);
         if (diff <= 0 || isFastDisplay) {
           // ステートを初期化
           setTimeLeft(100);          // 初期化のタイマー設定

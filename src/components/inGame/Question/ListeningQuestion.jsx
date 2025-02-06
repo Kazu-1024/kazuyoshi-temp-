@@ -18,7 +18,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     
             const userAgent = navigator.userAgent.toLowerCase();
     
-            if (userAgent.indexOf("chrome") !== -1 || userAgent.indexOf("edg") !== -1) {
+            if (userAgent.indexOf("chrome") !== -1 || userAgent.indexOf("edge") !== -1) {
                 // Chrome と Edge 用の音声設定
                 voiceName = "Google US English";
             } else if (userAgent.indexOf("safari") !== -1) {
@@ -74,7 +74,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
         setTimeout(() => {
             console.log("handlePlay");
             handlePlay();
-        }, 3000);
+        }, 1000);
 
     },[questionText]);
 
@@ -83,6 +83,38 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
 
         utteranceRef.current = new SpeechSynthesisUtterance(explanation);
         speechSynthesisRef.current = speechSynthesis;
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data)
+            if(data.status == "timer_start"){
+                console.log("リスニングのタイマーが動きました");
+                setIsReady(true);
+                setStartTime(data.startTime);
+            }else if(data.status == 'answer_given'){
+                console.log("リスニングのanswergiven");
+                console.log(utteranceRef.current);
+                handleAnswerGiven(data);
+            }else if(data.status == 'answer_unlock'){
+                console.log("リスニングのunlock");
+                console.log(utteranceRef.current);
+                handleAnswerUnlock(data);
+            }else if(data.status == 'answer_correct'){
+                console.log("リスニングの正解判定");
+                console.log(utteranceRef.current);
+                handleAnswerCorrect(data);
+            }else if(data.status == 'game_end'){
+                onGameEnd(data);
+            }
+            // console.log(event.data.startTime);
+            };
+
+            ws.onclose = (event) => {
+                console.log("Connection closed:", event);
+            };
+        
+            ws.onerror = (event) => {
+                console.log("Error occurred:", event);
+            };
 
         // 音声が終了したら
         utteranceRef.current.onend = () => {
@@ -97,32 +129,6 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
                 }));
             };
             setIsReady(true);
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data)
-                if(data.status == "timer_start"){
-                    setIsReady(true);
-                    setStartTime(data.startTime);
-                }else if(data.status == 'answer_given'){
-                    handleAnswerGiven(data);
-                }else if(data.status == 'answer_unlock'){
-                    handleAnswerUnlock(data);
-                }else if(data.status == 'answer_correct'){
-                    setIsReady(false);
-                    setStartTime(null);
-                    handleAnswerCorrect(data);
-                }else if(data.status == 'game_end'){
-                    onGameEnd(data);
-                }
-                // console.log(event.data.startTime);
-                };
-
-                ws.onclose = (event) => {
-                    console.log("Connection closed:", event);
-                };
-            
-                ws.onerror = (event) => {
-                    console.log("Error occurred:", event);
-                };
             };
 
         if (isPaused) { 

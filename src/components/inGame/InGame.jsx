@@ -40,6 +40,7 @@ const InGame = () => {
   const playerIdRef = useRef(null);
   const oppnentIdRef = useRef(null);
   const ableAnswerRef = useRef([]);
+  const currentQuestionIndexRef = useRef(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,6 +68,10 @@ const InGame = () => {
     ableAnswerRef.current = ableAnswer;
     console.log("更新後の ableAnswer:", ableAnswerRef.current);
   },[ableAnswer]);
+
+  useEffect(() => {
+    currentQuestionIndexRef.current = currentQuestionIndex;  
+  },[currentQuestionIndex])
   
   // WebSocket接続の確立
   useEffect(() => {
@@ -274,20 +279,36 @@ const InGame = () => {
 
   const onNextQuestion = () => {
     if (gameEnded) return;
-
-    if(currentQuestionIndex + 1 < questions.length){
-      console.log(currentQuestionIndex);
-      console.log(questions);
-      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
-      setQuestion(questions[currentQuestionIndex]);
+  
+    if (currentQuestionIndex + 1 < questions.length) {
+      console.log("変更前", currentQuestionIndex);
+      console.log("変更前", currentQuestionIndexRef.current);
+  
+      // Stateを更新しつつ、Refの値も手動で更新
+      setCurrentQuestionIndex((prevIndex) => {
+        const newIndex = prevIndex + 1;
+        currentQuestionIndexRef.current = newIndex; // Refを明示的に更新
+        return newIndex;
+      });
+  
+      console.log("変更あと", currentQuestionIndexRef.current);
+  
+      // 次の質問をセット（setStateの非同期性を考慮）
+      setTimeout(() => {
+        setQuestion(questions[currentQuestionIndexRef.current]);
+      }, 0);
+  
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);
+  
+      // opponentIdRef のスペルミス修正
       setAbleAnswer([{ [oppnentIdRef.current]: true, [playerIdRef.current]: true }]);
-    }else{
+    } else {
       onGameEnd("lastQuestion");
     }
   };
+  
 
   const onQuestionTimeOut = () => {
     console.log('問題のタイムアウト');
