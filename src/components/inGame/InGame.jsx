@@ -1,4 +1,4 @@
-import React, {useState , useEffect} from 'react'
+import React, {useState , useEffect, useRef} from 'react'
 import GameStatus from './GameStatus';
 import TimerQuestionDisplay from './Question/TimerQuestionDisplay';
 import icon from '../../assets/images/defaultIcon.png';
@@ -8,7 +8,6 @@ import Answering from './Answering.jsx';
 import AnswerAnimation from './AnswerAnimation.jsx';
 import { useWebSocket } from '../../WebSocketContext.js';
 import { useLocation, useNavigate } from 'react-router-dom';
-
 const InGame = () => {
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
@@ -37,6 +36,10 @@ const InGame = () => {
     correctAnswer: '',
     explanation: ''
   });
+  const data = useRef();
+  const playerIdRef = useRef(null);
+  const oppnentIdRef = useRef(null);
+  const ableAnswerRef = useRef([]);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,41 +49,24 @@ const InGame = () => {
   useEffect(() => {
     let data = messageData;
     console.log('受信したメッセージの詳細:', data);
-    // if(isStarted){
-    //   return
-    // }
     if (data.status === 'game_start' && data.questions) {
       // playerIdの設定を確認
       setPlayerId(data.player1Id);
       console.log('playerIdをセット:', data.player1Id);
   
-      // 対戦相手の名前を設定
-      if (data.opponent) {
-        console.log('対戦相手の名前を受信:', data.opponent);
-          localStorage.setItem('enemyName', data.player1Id);
-          localStorage.setItem('playerName', data.opponent);
-        setPlayerId(data.player1Id);
-        setOpponentId(data.opponent);
-        setAbleAnswer([{ opponent: true, player1Id: true }]);
-      }
-  
-      console.log('問題データを受信:', data.questions);
-      const formattedQuestions = data.questions.map(q => ({
-        id: q.id,
-        questionType: q.question_type || '',
-        questionText: q.question_text || '',
-        choices: q.choices || [],
-        correctAnswer: q.correct_answer || '',
-        explanation: q.explanation || ''
-      }));
-  
-      setQuestions(formattedQuestions);
-      if (formattedQuestions.length > 0) {
-        setQuestion(formattedQuestions[currentQuestionIndex]); // 最初の問題を設定
-      }
-      // setIsStarted(true);
+      setUp(data);
     }
-  }, [messageData, playerId,currentQuestionIndex]);  // messageDataとplayerIdを依存配列に追加
+  }, []);
+
+  useEffect(() => {
+    playerIdRef.current = playerId;
+    oppnentIdRef.current = opponentId;
+  }, [playerId]);
+
+  useEffect(() => {
+    ableAnswerRef.current = ableAnswer;
+    console.log("更新後の ableAnswer:", ableAnswerRef.current);
+  },[ableAnswer]);
   
   // WebSocket接続の確立
   useEffect(() => {
@@ -155,54 +141,93 @@ const InGame = () => {
     }
   };
   
+  const setUp = (data) => {
+    // 対戦相手の名前を設定
+    if (data.opponent) {
+      console.log('対戦相手の名前を受信:', data.opponent);
+      setPlayerId(data.player1Id);
+      setOpponentId(data.opponent);
+      setAbleAnswer([{ [data.opponent]: true, [data.player1Id]: true }]);
+    }
+    
+    console.log('問題データを受信:', data.questions);
+    const formattedQs = formattedQuestions(data.questions);
+    
+    setQuestions(formattedQs);
+    
+    if (formattedQs.length > 0) {
+      setQuestion(formattedQs[0]);
+    }
+  };
+  
+  const formattedQuestions = (questions) => {
+    return questions.map(q => ({
+      id: q.id,
+      questionType: q.question_type || '',
+      questionText: q.question_text || '',
+      choices: q.choices || [],
+      correctAnswer: q.correct_answer || '',
+      explanation: q.explanation || ''
+    }));
+  };
+  
+
   const handleAnswerGiven = (data) => {
     console.log('answer_given case に入りました');
     console.log(data);
-    console.log(playerId);
-    console.log(opponentId);
+    console.log(playerIdRef.current);
+    console.log(oppnentIdRef.current);
     const answeredPlayerId = data.player_id;
-    if (answeredPlayerId === playerId) {
+    if (answeredPlayerId === playerIdRef.current) {
       console.log("回答権を獲得しました選択しをクリックしてください");
       setShowChoices(true);
     } else {
       setIsAnswering(true);
     }
-    setAbleAnswer([{ answeredPlayerId: false }]);
+    setAbleAnswer(prev => {
+      const prevObj = prev[0] || {};
+      return [{ ...prevObj, [answeredPlayerId]: false }];
+    });
+    
     setIsPaused(true);
     setIsLocked(true);
   };
 
+  
   const handleAnswerUnlock = (data) => {
     const answeredPlayerId = data.player_id;
   
-    if (answeredPlayerId !== playerId) {
+    if (answeredPlayerId !== playerIdRef.current) {
       setHpB(prevHp => prevHp - 1);
     } else {
       console.log('回答権を失います');
       setHpA(prevHp => prevHp - 1);
     }
-    setIsLocked(!ableAnswer[answeredPlayerId])
+    setIsLocked(!ableAnswerRef.current[0][playerIdRef.current]);
+    console.log(playerIdRef.current);
+    console.log(!ableAnswerRef.current[0][playerIdRef.current]);
     setIsPaused(false);
     setIsAnswering(false);
-    console.log(ableAnswer);
-    if (ableAnswer.every(item => item.opponent === false && item.playerId === false)) {
+    console.log(ableAnswerRef.current);
+    const allFalse = Object.values(ableAnswerRef.current[0]).every(value => value === false);
+
+    if (allFalse) {
       setIsFastDisplay(true);
     }
+
   };
   const handleAnswerCorrect = (data) => {
     const answeredPlayerId = data.player_id;
   
-    if (answeredPlayerId !== playerId) {
+    if (answeredPlayerId !== playerIdRef.current) {
       setScoreB(prevScore => {
         const newScore = prevScore + 1;
-        localStorage.setItem('enemyScore', newScore.toString());
         setIsAnswering(false);
         return newScore;
       });
     } else {
       setScoreA(prevScore => {
         const newScore = prevScore + 1;
-        localStorage.setItem('myScore', newScore.toString());
         return newScore;
       });
     }
@@ -254,10 +279,11 @@ const InGame = () => {
       console.log(currentQuestionIndex);
       console.log(questions);
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+      setQuestion(questions[currentQuestionIndex]);
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);
-      setAbleAnswer([{ opponentId: true, playerId: true }]);
+      setAbleAnswer([{ [oppnentIdRef.current]: true, [playerIdRef.current]: true }]);
     }else{
       onGameEnd("lastQuestion");
     }
@@ -271,15 +297,20 @@ const InGame = () => {
   const onGameEnd = (data) => {
     //ゲームの終了判定はまだしてない
   setGameEnded(true);
+  console.log(data);
   const reason = data.reason;
+  console.log(data.reason);
   let result;
   if (reason === "hp_zero") {
-    result = {  winner: data.winner};
+    result = {  winner: data.winner, loser: data.loser};
   } else if (reason === "point_reached") {
-    result = {  winner: data.winner };
+    result = {  winner: data.winner, loser: data.loser};
   } else {
     // それ以外はスコアで勝者を決定
-    result = { winner: scoreA > scoreB ? playerId : opponentId };
+    result = { 
+      winner: scoreA > scoreB ? playerId : opponentId,
+      loser:  scoreA < scoreB ? playerId : opponentId,
+     };
   }
   setTimeout(() => {
     navigate('/result', { 
@@ -298,7 +329,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} explanation={question.explanation} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
+          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} explanation={question.explanation} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} setUp={setUp}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>

@@ -3,7 +3,7 @@ import ShortQuestion from './ShortQuestion'
 import LongQuestion from './LongQuestion'
 import ListeningQuestion from './ListeningQuestion'
 
-const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd, isHost}) => {
+const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd, setUp, isHost}) => {
   const [timeLeft, setTimeLeft] = useState(100);
   const [displayText, setDisplayText] = useState("");
   const [isTimerReady, setIsTimerReady] = useState(false);
@@ -69,7 +69,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
             return prev;
           }
         });
-      }, isFastDisplay ? 10 : 20);
+      }, isFastDisplay ? 20 : 100);
     }
 
     return () => {
@@ -107,7 +107,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
           onQuestionTimeOut();  
         } else {
           setTimeLeft(diff);
-          console.log("残り時間更新");
+          // console.log("残り時間更新");
         }
       };
 

@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Tag1on1 from '../../assets/images/1on1_tag.png';
 import ResultText from '../../assets/images/ResultText.png'
 import defaultIcon from '../../assets/images/defaultIcon.png';
@@ -9,22 +9,17 @@ import shareImg from "../../assets/images/share.png";
 
 const Result = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const result = location.state?.result;
+  console.log(location.state);
   
   // LocalStorageから情報を取得
   const [resultData, setResultData] = useState(() => {
-    const playerName = localStorage.getItem('playerName');
-    const enemyName = localStorage.getItem('enemyName');
-    const playerScore = parseInt(localStorage.getItem('playerScore') || '0');
-    const enemyScore = parseInt(localStorage.getItem('enemyScore') || '0');
     
     // スコアを比較して勝者と敗者を決定
-    const winner = playerScore > enemyScore 
-      ? { name: playerName, rate: 1314 }
-      : { name: enemyName, rate: 1314 };
-    
-    const loser = playerScore > enemyScore
-      ? { name: enemyName, rate: 1298 }
-      : { name: playerName, rate: 1298 };
+    const winner = result.winner; 
+  
+    const loser = result.loser;
 
     return { winner, loser };
   });
@@ -55,11 +50,11 @@ const Result = () => {
                 <div className="w-5/6 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-lg mx-2">{resultData.winner.name}</p>
+                  <p className="text-lg mx-2">{result.winner}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgroud" className="block" />
                     <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-xl outlined-bold">
-                      {resultData.winner.rate}
+                      {result.winner}
                     </p>
                   </div>
                 </div>
@@ -73,11 +68,11 @@ const Result = () => {
                 <div className="w-11/12 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
                   <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-[15px] mx-2">{resultData.loser.name}</p>
+                  <p className="text-[15px] mx-2">{result.loser}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgrond" className="block" />
                     <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-[14px] outlined-bold">
-                      {resultData.loser.rate}
+                      {result.loser.rate}
                     </p>
                   </div>
                 </div>

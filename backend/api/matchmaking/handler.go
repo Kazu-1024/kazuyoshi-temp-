@@ -345,6 +345,7 @@ func determineWinner(room *Room, reason string) {
 		"winner":   winnerID,
 		"loser":    loserID,
 		"message":  message,
+		"reason":   reason,
 	}
 
 	room.Player1Conn.WriteJSON(winnerMessage)
