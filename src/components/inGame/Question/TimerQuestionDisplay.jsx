@@ -1,5 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react'
 import ShortQuestion from './ShortQuestion'
+import LongQuestion from './LongQuestion'
+import ListeningQuestion from './ListeningQuestion'
 
 const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd, isHost}) => {
   const [timeLeft, setTimeLeft] = useState(100);
@@ -122,14 +124,14 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
 
   const renderQuestion = () => {
     switch (type) {
-      // case "short":
-      //   return <ShortQuestion displayText={displayText} choices={choices} />;
-      // case "long":
-      //   return <LongQuestion displayText={displayText} choices={choices} />;
-      // case "listening":
-      //   return <ListeningQuestion questionText={questionText} choices={choices} isPaused={isPaused} ws={ws} setIsTimerReady={setIsTimerReady}/>;
-      // default:
-      //   return <ShortQuestion displayText={displayText} choices={choices} />;
+      case "short":
+        return <ShortQuestion displayText={displayText} choices={choices} />;
+      case "long":
+        return <LongQuestion displayText={displayText} choices={choices} />;
+      case "listening":
+        return <ListeningQuestion questionText={questionText} choices={choices} isPaused={isPaused} ws={ws} setIsTimerReady={setIsTimerReady}/>;
+      default:
+        return <ShortQuestion displayText={displayText} choices={choices} />;
     }
   }
 
@@ -137,7 +139,7 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
     
     <>
       <progress value={timeLeft} max="100" className="absolute top-0 left-0 w-full h-[3%] z-10 appearance-none"/>
-      {/* {renderQuestion()} */}<ShortQuestion displayText={displayText} choices={choices} />;
+      {renderQuestion()}
     </>
   )
 }

@@ -8,8 +8,6 @@ import Answering from './Answering.jsx';
 import AnswerAnimation from './AnswerAnimation.jsx';
 import { useWebSocket } from '../../WebSocketContext.js';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { data } from 'autoprefixer';
-import { use } from 'react';
 
 const InGame = () => {
   const [scoreA, setScoreA] = useState(0);
