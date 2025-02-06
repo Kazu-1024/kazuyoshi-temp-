@@ -3,10 +3,10 @@ import React from 'react'
 const ShortQuestion = ({ displayText, choices }) => {
   return (
     <>
-        <div className="absolute w-11/12 h-[80%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30 ">
+        <div className="absolute w-11/12 h-[70%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30 ">
             <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
             <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-centerr">
-                <div className="h-[75%] pt-10 px-3 text-[17px] overflow-scroll">
+                <div className="h-[80%] pt-10 px-3 text-[17px] overflow-scroll">
                     {displayText}
                 </div>
 
