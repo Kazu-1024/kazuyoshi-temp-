@@ -108,7 +108,7 @@ const CreateQuestions = () => {
         </div>
 
         <div className="max-w-md shadow-2xl bg-white mx-[4%] p-4 border-2 border-black rounded-b-xl">
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[58dvh] overflow-y-auto">
             {questions && questions.length > 0 ? (
               questions.map((question, index) => (
                 <div key={index} className="mb-4">
@@ -144,7 +144,7 @@ const CreateQuestions = () => {
             )}
           </div>
 
-          <div className="flex justify-end mt-2">
+          <div className="absolute bottom-16 right-2">
             <button onClick={() => setIsDialogOpen(true)}>
               <img src={Plus_circle} className="w-10 h-10" alt="Add" />
             </button>
