@@ -23,10 +23,12 @@ const HamburgerMenu = () => {
 
   return (
     <div className="relative" onClickCapture={handleOutsideClick}>
+      {/* ハンバーガーボタン */}
       <button
         onClick={toggleMenu}
         className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 py-auto ml-4"
       >
+        {/* ハンバーガーアイコン */}
         <div className="space-y-1">
           <span className="block w-6 h-0.5 bg-gray-700"></span>
           <span className="block w-6 h-0.5 bg-gray-700"></span>
@@ -34,36 +36,65 @@ const HamburgerMenu = () => {
         </div>
       </button>
 
+      {/* メニュー */}
       {isOpen && (
-        <div className="fixed inset-0  flex-col items-center justify-center z-20 pt-[45%] pl-11 pr-4 bg-gray-500 bg-opacity-50">
+        <div className="fixed inset-0  flex-col items-center justify-center z-20 pt-60 pl-11 pr-4 bg-gray-500 bg-opacity-50">
           <div className='rounded-t-lg bg-gray-700  shadow-lg w-11/12 max-w-md pt-1 flex z-10'>
             <img src={hamburgerIcon} alt="" className='ml-2 mt-2 h-4 w-1/12' />
             <p className='mt-1 ml-5 text-white font-bold'>MENU</p>
             <div className=" justify-end ml-auto">
               <button
                 onClick={closeMenu}
-                className="ml-auto text-gray-400 hover:text-gray-300"
+                className="text-gray-500 hover:text-gray-700"
               >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            <div className="p-4">
-              <ul>
-                <li className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer">
-                  <img src={settingIcon} alt="" className='size-6' />
-                  <a href="#settings" className='ml-4 font-bold'>設定</a>
+          </div>
+          <div className="bg-white rounded-b-lg shadow-lg w-11/12  h-96 max-w-md p-6" >
+            <ul className="flex flex-col">
+              <button>
+                <li className="pl-4 py-2 hover:bg-gray-100 flex">
+                  <img src={settingIcon} alt="" className='size-7' />
+                  <a href="#home" className=' ml-4 font-bold pt-0.5'>設定</a>
+                  <div class="flex items-center justify-center w-4 h-4 ml-auto mt-1 pt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                    </svg>
+                  </div>
                 </li>
-                <li className="border-t border-gray-200 my-2"></li>
-                <li className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer">
-                  <img src={userIcon} alt="" className='size-6' />
-                  <a href="#user" className='ml-4 font-bold'>ユーザー設定</a>
+              </button>
+              <li className='border-t border-black border-0'>
+              </li>
+              <button>
+                <li className="pl-4 py-2 hover:bg-gray-100 flex ">
+                  <img src={userIcon} alt="" className='size-7'/>
+                  <a href="#about " className='ml-4 font-bold inline-block pt-0.5'>ユーザー設定</a>
+                  <div className="flex items-center justify-center w-4 h-4 ml-auto mt-1 pt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6" />
+                    </svg>
+                  </div>
                 </li>
-              </ul>
-            </div>
+              </button>
+              <li className='border-t border-black border-0'>
+              </li>
+            </ul>
           </div>
         </div>
+
       )}
     </div>
   );
