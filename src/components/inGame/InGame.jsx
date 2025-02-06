@@ -63,7 +63,7 @@ const InGame = () => {
           localStorage.setItem('playerName', data.opponent);
         setPlayerId(data.player1Id);
         setOpponentId(data.opponent);
-        setAbleAnswer([{ opponent: true, player1Id: true }]);
+        setAbleAnswer([{ [data.opponent]: true, [data.player1Id]: true }]);
       }
   
       console.log('問題データを受信:', data.questions);
@@ -169,11 +169,19 @@ const InGame = () => {
     } else {
       setIsAnswering(true);
     }
-    setAbleAnswer([{ answeredPlayerId: false }]);
+    setAbleAnswer(prev => {
+      const prevObj = prev[0] || {};
+      return [{ ...prevObj, [answeredPlayerId]: false }];
+    });
+    
     setIsPaused(true);
     setIsLocked(true);
   };
 
+  useEffect(() => {
+    console.log("更新後の ableAnswer:", ableAnswer);
+  }, [ableAnswer]);
+  
   const handleAnswerUnlock = (data) => {
     const answeredPlayerId = data.player_id;
   
@@ -183,7 +191,7 @@ const InGame = () => {
       console.log('回答権を失います');
       setHpA(prevHp => prevHp - 1);
     }
-    setIsLocked(!ableAnswer[playerId]);
+    setIsLocked(!ableAnswer[0][playerId]);
     setIsPaused(false);
     setIsAnswering(false);
     console.log(ableAnswer);
@@ -259,7 +267,7 @@ const InGame = () => {
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);
-      setAbleAnswer([{ opponentId: true, playerId: true }]);
+      setAbleAnswer([{ [data.opponent]: true, [data.player1Id]: true }]);
     }else{
       onGameEnd("lastQuestion");
     }
