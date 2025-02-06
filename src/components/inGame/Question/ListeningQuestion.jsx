@@ -18,9 +18,9 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     
             const userAgent = navigator.userAgent.toLowerCase();
     
-            if (userAgent.indexOf("chrome") !== -1) {
-                // Chrome 用の音声設定
-                voiceName = "Google UK English Male";
+            if (userAgent.indexOf("chrome") !== -1 || userAgent.indexOf("edg") !== -1) {
+                // Chrome と Edge 用の音声設定
+                voiceName = "Google US English";
             } else if (userAgent.indexOf("safari") !== -1) {
                 // Safari 用の音声設定
                 voiceName = "Samantha";
@@ -86,6 +86,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
 
         // 音声が終了したら
         utteranceRef.current.onend = () => {
+            speechSynthesisRef.current.cancel();
             setIsTimerReady(true);
             console.log("isstop",isPaused);
             setIsPlaying(false);
