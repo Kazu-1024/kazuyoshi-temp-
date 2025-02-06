@@ -36,7 +36,8 @@ const InGame = () => {
     questionType: '',
     questionText: '',
     choices: [], // 初期値を空配列にする
-    correctAnswer: ''
+    correctAnswer: '',
+    explanation: ''
   });
   
   const location = useLocation();
@@ -71,7 +72,8 @@ const InGame = () => {
         questionType: q.question_type || '',
         questionText: q.question_text || '',
         choices: q.choices || [],
-        correctAnswer: q.correct_answer || ''
+        correctAnswer: q.correct_answer || '',
+        explanation: q.explanation || ''
       }));
   
       setQuestions(formattedQuestions);
@@ -82,8 +84,6 @@ const InGame = () => {
     }
   }, [messageData, playerId,currentQuestionIndex]);  // messageDataとplayerIdを依存配列に追加
   
-
-
   // WebSocket接続の確立
   useEffect(() => {
   
@@ -214,7 +214,6 @@ const InGame = () => {
     setIsFastDisplay(true);
   };
   
-
   const onAnswerTimeOut = () => {
     console.log('解答のタイムアウト');
     ws.send(JSON.stringify({
@@ -226,6 +225,7 @@ const InGame = () => {
     }));
     setShowChoices(false);
   };
+
   const onSelectChoice = (choice) => {
     console.log(question.correctAnswer);
     const myChoice = question.choices[choice - 1];
@@ -240,6 +240,7 @@ const InGame = () => {
     }));
     setShowChoices(false);
   };
+
   const handleAnswerClick = () => {
     ws.send(JSON.stringify({
       type: 'try_answer',
@@ -263,7 +264,6 @@ const InGame = () => {
       onGameEnd("lastQuestion");
     }
   };
-  
 
   const onQuestionTimeOut = () => {
     console.log('問題のタイムアウト');
@@ -290,7 +290,6 @@ const InGame = () => {
   }, 2000);
   };
 
-
   return (
     <div className="h-full w-full">
         <div className="relative flex w-full grid-cols-2 shadow-md h-[14%] bg-white z-10">
@@ -301,7 +300,7 @@ const InGame = () => {
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
+          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} explanation={question.explanation} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} playerId={playerId} opponentId={opponentId}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>
