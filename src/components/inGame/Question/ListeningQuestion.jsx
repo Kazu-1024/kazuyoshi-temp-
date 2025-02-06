@@ -41,8 +41,8 @@ const ListeningQuestion = ({ questionText, choices, isPaused, ws, setIsTimerRead
                         <div className="absolute inset-x-4 border-t border-gray-300"/>
                     </div>
                     <div className="h-[55%] w-full flex flex-col items-center justify-center">
-                        <strong className="text-3xl">Listen it.</strong>
-                        <img src={headPhonesImg} alt="headPhones" className="w-14 h-14 rounded-full bg-gray-500" />
+                        <p className="font-bold text-2xl">Listen it.</p>
+                        <div className=""></div>
                     </div>
                 </div>
             </div>
