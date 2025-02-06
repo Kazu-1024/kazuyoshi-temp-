@@ -97,7 +97,7 @@ func GetTopPlayersHandler(db *sql.DB) http.HandlerFunc {
 			SELECT username, rating 
 			FROM player_ratings 
 			ORDER BY rating DESC 
-			LIMIT 10
+			LIMIT 50
 		`)
 		if err != nil {
 			http.Error(w, "ランキングの取得に失敗しました", http.StatusInternalServerError)
