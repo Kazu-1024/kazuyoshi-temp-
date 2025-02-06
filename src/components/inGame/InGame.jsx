@@ -183,7 +183,7 @@ const InGame = () => {
       console.log('回答権を失います');
       setHpA(prevHp => prevHp - 1);
     }
-    setIsLocked(!ableAnswer[answeredPlayerId])
+    setIsLocked(!ableAnswer[playerId]);
     setIsPaused(false);
     setIsAnswering(false);
     console.log(ableAnswer);
@@ -273,15 +273,20 @@ const InGame = () => {
   const onGameEnd = (data) => {
     //ゲームの終了判定はまだしてない
   setGameEnded(true);
+  console.log(data);
   const reason = data.reason;
+  console.log(data.reason);
   let result;
   if (reason === "hp_zero") {
-    result = {  winner: data.winner};
+    result = {  winner: data.winner, loser: data.loser};
   } else if (reason === "point_reached") {
-    result = {  winner: data.winner };
+    result = {  winner: data.winner, loser: data.loser};
   } else {
     // それ以外はスコアで勝者を決定
-    result = { winner: scoreA > scoreB ? playerId : opponentId };
+    result = { 
+      winner: scoreA > scoreB ? playerId : opponentId,
+      loser:  scoreA < scoreB ? playerId : opponentId,
+     };
   }
   setTimeout(() => {
     navigate('/result', { 
