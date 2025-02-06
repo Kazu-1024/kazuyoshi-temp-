@@ -3,7 +3,7 @@ import ShortQuestion from './ShortQuestion'
 import LongQuestion from './LongQuestion'
 import ListeningQuestion from './ListeningQuestion'
 
-const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd, setUp, isHost}) => {
+const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaused, isFastDisplay, ws, onQuestionTimeOut, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd}) => {
   const [timeLeft, setTimeLeft] = useState(100);
   const [displayText, setDisplayText] = useState("");
   const [isTimerReady, setIsTimerReady] = useState(false);
@@ -32,7 +32,6 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
             clearInterval(displayTextTimerRef.current);
             displayTextTimerRef.current = null;
             setIsTimerReady(true);
-            console.log(isHost);
             console.log("isstop",isPaused);
             
             // すべて表示されたらタイマー開始
@@ -52,6 +51,8 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
               }else if(data.status == 'answer_unlock'){
                 handleAnswerUnlock(data);
               }else if(data.status == 'answer_correct'){
+                setIsReady(false);
+                setStartTime(null);
                 handleAnswerCorrect(data);
               }else if(data.status == 'game_end'){
                 onGameEnd(data);
@@ -129,7 +130,22 @@ const TimerQuestionDisplay = ({ type, questionText, choices, isPaused, isFastDis
       case "long":
         return <LongQuestion displayText={displayText} choices={choices} />;
       case "listening":
-        return <ListeningQuestion questionText={questionText} choices={choices} isPaused={isPaused} ws={ws} setIsTimerReady={setIsTimerReady}/>;
+        return <ListeningQuestion 
+          questionText={questionText}
+          choices={choices}
+          explanation={explanation}
+          isPaused={isPaused}
+          setIsReady={setIsReady}
+          setStartTime={setStartTime}
+          startTime={startTime}
+          isTimerReady={isTimerReady}
+          setIsTimerReady={setIsTimerReady}
+          ws={ws}
+          handleAnswerGiven={handleAnswerGiven}
+          handleAnswerUnlock={handleAnswerUnlock}
+          handleAnswerCorrect={handleAnswerCorrect}
+          onGameEnd={onGameEnd}
+        />;
       default:
         return <ShortQuestion displayText={displayText} choices={choices} />;
     }
