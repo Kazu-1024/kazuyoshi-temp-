@@ -73,7 +73,7 @@ const Rankings = () => {
           TOP50
         </div>
         <div className='bg-white px-[2%] mx-[4%]'>
-          <div className="flex flex-col items-center overflow-y-auto max-h-[60dvh] px-4 mb-[5%]">
+          <div className="flex flex-col items-center overflow-y-auto max-h-[58dvh] px-4 mb-[5%]">
             {rankings.length > 0 ? (
               rankings.map((player) => (
                 <div
