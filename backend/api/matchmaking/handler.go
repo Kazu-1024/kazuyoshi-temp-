@@ -433,7 +433,7 @@ func fetchQuestions(count int) ([]Question, error) {
 		var q Question
 		var choice1, choice2, choice3, choice4 string
 		err := db.QueryRow(`
-			SELECT id, question_text, question_type, correct_answer, choice1, choice2, choice3, choice4 
+			SELECT id, question_text, question_type, correct_answer, choice1, choice2, choice3, choice4, explanation
 			FROM questions 
 			WHERE id = ?
 		`, id).Scan(
@@ -445,6 +445,7 @@ func fetchQuestions(count int) ([]Question, error) {
 			&choice2,
 			&choice3,
 			&choice4,
+			&q.Explanation,
 		)
 		if err != nil {
 			return nil, err

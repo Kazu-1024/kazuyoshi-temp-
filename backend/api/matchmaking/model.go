@@ -45,4 +45,5 @@ type Question struct {
 	QuestionType  string   `json:"question_type"`
 	Choices       []string `json:"choices"`
 	CorrectAnswer string   `json:"correct_answer"`
+	Explanation   string   `json:"explanation"`
 }
