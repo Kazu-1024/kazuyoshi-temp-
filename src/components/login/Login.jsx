@@ -75,51 +75,55 @@ const Login = () => {
 
   return (
     <>
-      <div className='flex justify-center'>
-        <img src={Luxon} alt="" className='mt-16'/>
-      </div>
-      <div className="shadow-2xl bg-white rounded-2xl p-8  max-w-md mt-12 mx-6">
-        <h2 className="text-2xl font-bold mb-4 text-center">{isLogin ? 'ログイン' : '新規作成'}</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <p className='mt-4'>プレイヤーID</p>
-          <input
-            type="text"
-            name="username"
-            placeholder="プレイヤーIDを入力"
-            className="bg-gray-200 border-2 border-gray-500 h-10 rounded-md  mt-1"
-            value={formData.username}
-            onChange={handleChange}
-          />
-          <p className='mt-4'>パスワード</p>
-          <input
-            type="password"
-            name="password"
-            placeholder="パスワードを入力"
-            className=" bg-gray-200 border-2 border-gray-500 rounded-md shadow-2xl h-10 mt-1"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          {!isLogin && (
-            <>
-              <p className="mt-4">確認用パスワード</p>
+      <div className="h-full w-full relative">
+        <div className="absolute flex flex-col items-center justify-center h-[50%] w-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <div className="flex aspect-auto w-48 pb-8 items-center justify-center">
+            <img src={Luxon} alt="" className="object-contain" />
+          </div>
+          <div className="shadow-2xl bg-white rounded-2xl w-5/6 p-8 mb-16">
+            <h2 className="text-2xl font-bold mb-2 text-center">{isLogin ? 'ログイン' : '新規作成'}</h2>
+            <form onSubmit={handleSubmit} className="flex flex-col">
+              <p className='mt-4'>プレイヤーID</p>
               <input
-                type="password"
-                name="confirmPassword"
-                placeholder="確認用パスワードを入力"
-                className="bg-gray-200 border-2 border-gray-500 rounded-md shadow-2xl h-10 mt-1"
-                value={formData.confirmPassword}
+                type="text"
+                name="username"
+                placeholder="プレイヤーIDを入力"
+                className="bg-gray-200 border-2 border-gray-500 h-10 rounded-md  mt-1"
+                value={formData.username}
                 onChange={handleChange}
               />
-            </>
-          )}
-          {isLogin && (
-            <button type="button" className='text-left text-red-500 underline'>パスワードをお忘れの方はこちら</button>
-          )}
-          <button type="submit" className="h-10 text-white  border-2 border-black bg-gray-400 rounded-xl mx-8 mt-8 mb-4">
-            {isLogin ? 'ログイン' : '新規登録' }
-          </button>
-          <button type="button" className='text-red-500 underline' onClick={() => setIsLogin(!isLogin)}>{!isLogin ? 'ログインはこちら' : '新規登録はこちら' }</button>
-        </form>
+              <p className='mt-4'>パスワード</p>
+              <input
+                type="password"
+                name="password"
+                placeholder="パスワードを入力"
+                className=" bg-gray-200 border-2 border-gray-500 rounded-md shadow-2xl h-10 mt-1"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              {!isLogin && (
+                <>
+                  <p className="mt-4">確認用パスワード</p>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="確認用パスワードを入力"
+                    className="bg-gray-200 border-2 border-gray-500 rounded-md shadow-2xl h-10 mt-1"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                </>
+              )}
+              {isLogin && (
+                <button type="button" className='text-[12px] text-left text-red-500 underline'>パスワードをお忘れの方はこちら</button>
+              )}
+              <button type="submit" className="h-10 text-white  border-2 border-black bg-gray-400 rounded-xl mx-8 mt-8 mb-4">
+                {isLogin ? 'ログイン' : '新規登録' }
+              </button>
+              <button type="button" className='text-red-500 underline' onClick={() => setIsLogin(!isLogin)}>{!isLogin ? 'ログインはこちら' : '新規登録はこちら' }</button>
+            </form>
+          </div>
+        </div>
       </div>
     </>
   )
