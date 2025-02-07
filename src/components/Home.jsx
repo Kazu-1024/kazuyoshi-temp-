@@ -8,6 +8,7 @@ import Dropdown from './common/Dropdown';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [isReadyToPlay, setIsReadyToPlay] = useState(false);
   
   // Cookieチェックを追加
   useEffect(() => {
@@ -23,6 +24,9 @@ const Home = () => {
   // オプションが選ばれた時の処理
   const handleOptionSelect = (option) => {
     setSelectedOption(option.label);  // 選ばれた項目を設定
+  };
+  const handleImageClick = () => {
+    setIsReadyToPlay(true); // 音声再生準備が完了したことを知らせる
   };
 
   return (
@@ -42,7 +46,7 @@ const Home = () => {
       <div className="relative flex flex-col items-center justify-center aspect-square w-9/12 max-h-96 mx-auto mt-5">
         <img src={selectStyle} className="w-full h-full object-contain" alt="Style Select" />
         <button className="absolute bottom-[8%] transform -translate-y-1/2 w-1/2 h-[20px] flex items-center justify-center aspect-[5/1]" onClick={() => navigate('/Matching')}>
-          <img src={startButton} alt="Start Button" className="object-cover" />
+          <img src={startButton} alt="Start Button" className="object-cover" onClick={handleImageClick} />
         </button>
       </div>
 

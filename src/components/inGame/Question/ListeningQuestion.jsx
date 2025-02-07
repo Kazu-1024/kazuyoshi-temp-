@@ -1,7 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react'
-import headPhonesImg from '../../../assets/images/headPhones.png'
-import playImg from '../../../assets/images/play.png'
-import pauseImg from '../../../assets/images/pause.png' 
+import React, { useEffect, useState, useRef } from 'react';
 
 const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIsReady, setStartTime, startTime, isTimerReady, setIsTimerReady, ws, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd }) => {
     const [situation, setSituation] = useState("");
@@ -11,30 +8,15 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     const speechSynthesisRef = useRef(null);
     const utteranceRef = useRef(null);
 
+    // 音声再生処理
     const handlePlay = () => {
         if (speechSynthesisRef.current) {
             let lang = "en-US";
-            let voiceName = "";
-    
-            const userAgent = navigator.userAgent.toLowerCase();
-    
-            if (userAgent.indexOf("chrome") !== -1 || userAgent.indexOf("edge") !== -1) {
-                // Chrome と Edge 用の音声設定
-                voiceName = "Google US English";
-            } else if (userAgent.indexOf("safari") !== -1) {
-                // Safari 用の音声設定
-                voiceName = "Samantha";
-            } else if (userAgent.indexOf("firefox") !== -1) {
-                // Firefox 用の音声設定
-                voiceName = "Google US English";
-            } else {
-                // その他のブラウザのデフォルト設定
-                voiceName = "Google US English";
-            }
-    
+            let voiceName = "Google US English";  // Chrome, Firefox, Edgeの場合の音声設定
+
             // 音声を設定
             setVoice(lang, voiceName);
-    
+
             // 音声再生
             speechSynthesisRef.current.speak(utteranceRef.current);
             setIsPlaying(true);
@@ -58,7 +40,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     const setVoice = (lang, voiceName) => {
         const voices = speechSynthesis.getVoices();
         const selectedVoice = voices.find(voice => voice.lang === lang && voice.name === voiceName);
-    
+
         if (selectedVoice) {
             utteranceRef.current.voice = selectedVoice;
         } else {
@@ -66,111 +48,75 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
         }
     };
 
+    // 受け取った問題文と選択肢を設定
     useEffect(() => {
         const [situation, question] = questionText.split("A:");
         setSituation(situation.replace("Q:", "").trim());
         setQuestion(question.trim());
 
+        // 初期設定: 音声再生を開始
         setTimeout(() => {
-            console.log("handlePlay");
             handlePlay();
         }, 1000);
+    }, [questionText]);
 
-    },[questionText]);
-
+    // 説明文がある場合の音声再生
     useEffect(() => {
         if (!explanation || isTimerReady) return;
 
         utteranceRef.current = new SpeechSynthesisUtterance(explanation);
         speechSynthesisRef.current = speechSynthesis;
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data)
-            if(data.status == "timer_start"){
-                console.log("リスニングのタイマーが動きました");
-                setIsReady(true);
-                setStartTime(data.startTime);
-            }else if(data.status == 'answer_given'){
-                console.log("リスニングのanswergiven");
-                console.log(utteranceRef.current);
-                handleAnswerGiven(data);
-            }else if(data.status == 'answer_unlock'){
-                console.log("リスニングのunlock");
-                console.log(utteranceRef.current);
-                handleAnswerUnlock(data);
-            }else if(data.status == 'answer_correct'){
-                console.log("リスニングの正解判定");
-                console.log(utteranceRef.current);
-                handleAnswerCorrect(data);
-            }else if(data.status == 'game_end'){
-                onGameEnd(data);
-            }
-            // console.log(event.data.startTime);
-            };
-
-            ws.onclose = (event) => {
-                console.log("Connection closed:", event);
-            };
-        
-            ws.onerror = (event) => {
-                console.log("Error occurred:", event);
-            };
-
-        // 音声が終了したら
+        // 音声が終了したらタイマーを設定
         utteranceRef.current.onend = () => {
             speechSynthesisRef.current.cancel();
             setIsTimerReady(true);
-            console.log("isstop",isPaused);
             setIsPlaying(false);
 
-            if(!startTime) {
-                ws.send(JSON.stringify({
-                    type: 'settingTimer',
-                }));
-            };
+            // タイマーの設定を開始
+            if (!startTime) {
+                ws.send(JSON.stringify({ type: 'settingTimer' }));
+            }
             setIsReady(true);
-            };
+        };
 
-        if (isPaused) { 
+        // 一時停止 or 再開処理
+        if (isPaused) {
             handlePause();
         } else if (!isPaused && !isPlaying) {
             handleResume();
         }
 
-        // Cleanup on component unmount or when questionText changes
         return () => {
             if (speechSynthesisRef.current) {
                 speechSynthesisRef.current.cancel();
             }
-        }; 
-    }, [explanation, isPaused ]);
+        };
+    }, [explanation, isPaused]);
 
     return (
-        <>
-            <div className="absolute w-11/12 h-[90%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30">
-                <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
-                <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-centerr">
-                    <div className="h-[45%] pt-10 px-3 text-[15px] overflow-scroll">
-                        Queston:  {question}
-                    </div>
-                    <div className="h-1/3 w-full grid grid-cols-2 gap-0 items-center text-[11px] font-inter font-bold">
-                            {choices.map((choice, index) => (
-                            <div key={index} className="text-center break-words whitespace-normal min-w-0">
-                                {index + 1 + " "}. {choice}
-                            </div>
-                            ))}
+        <div className="absolute w-11/12 h-[90%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30">
+            <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
+            <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center">
+                <div className="h-[45%] pt-10 px-3 text-[15px] overflow-scroll">
+                    <p>Question: {question}</p>
+                </div>
+                <div className="h-1/3 w-full grid grid-cols-2 gap-0 items-center text-[11px] font-inter font-bold">
+                    {choices.map((choice, index) => (
+                        <div key={index} className="text-center break-words whitespace-normal min-w-0">
+                            {index + 1 + " "}. {choice}
                         </div>
-                    <div className="relative w-full mb-4">
-                        <div className="absolute inset-x-4 border-t border-gray-300"/>
-                    </div>
-                    <div className="h-[55%] w-full flex flex-col items-center justify-center">
-                        <p className="font-bold text-2xl">Listen it.</p>
-                        <div className=""></div>
-                    </div>
+                    ))}
+                </div>
+                <div className="relative w-full mb-4">
+                    <div className="absolute inset-x-4 border-t border-gray-300"/>
+                </div>
+                <div className="h-[55%] w-full flex flex-col items-center justify-center">
+                    <p className="font-bold text-2xl">Listen it.</p>
                 </div>
             </div>
-        </>
-    )
-}
+        </div>
+    );
+};
 
-export default ListeningQuestion
+export default ListeningQuestion;
