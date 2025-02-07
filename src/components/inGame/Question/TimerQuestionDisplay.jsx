@@ -41,30 +41,6 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
               }));
             }
             setIsReady(true);
-            ws.onmessage = (event) => {
-              const data = JSON.parse(event.data)
-              if(data.status == "timer_start"){
-                setIsReady(true);
-                setStartTime(data.startTime);
-              }else if(data.status == 'answer_given'){
-                handleAnswerGiven(data);
-              }else if(data.status == 'answer_unlock'){
-                handleAnswerUnlock(data);
-              }else if(data.status == 'answer_correct'){
-                handleAnswerCorrect(data);
-              }else if(data.status == 'game_end'){
-                onGameEnd(data);
-              }
-              // console.log(event.data.startTime);
-            };
-
-            ws.onclose = (event) => {
-              console.log("Connection closed:", event);
-            };
-            
-            ws.onerror = (event) => {
-              console.log("Error occurred:", event);
-            };
             return prev;
           }
         });
@@ -89,21 +65,14 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
         const diff = (100 - Math.floor((now - startTime) / 100));
         // console.log(diff);
         if (diff <= 0 || isFastDisplay) {
-          // ステートを初期化
-          setTimeLeft(100);          // 初期化のタイマー設定
-          setIsReady(false);        // タイマーの準備状態をリセット
-          setStartTime(null);       // 開始時刻をリセット
-          setDisplayText("");       // 問題文をリセット
-          setIsTimerReady(false);   // タイマーの準備状態をリセット
-          
-          // 現在の表示位置をリセット
-          indexRef.current = 0;     // 現在の表示位置をリセット
-          
-          // タイマーの停止
           clearInterval(timerRef.current);
-        
-          // 問題のタイムアウト処理を実行
-          onQuestionTimeOut();  
+            setTimeLeft(100);        // 初期化のタイマー設定
+            setIsReady(false);       // タイマーの準備状態をリセット
+            setStartTime(undefined); // 開始時刻をリセット
+            setDisplayText("");      // 問題文をリセット
+            setIsTimerReady(false);  // タイマーの準備状態をリセット
+            indexRef.current = 0;    // 現在の表示位置をリセット
+            onQuestionTimeOut();     // 問題のタイムアウト処理を実行
         } else {
           setTimeLeft(diff);
           // console.log("残り時間更新");
@@ -120,6 +89,18 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
       }
     };
   }, [isTimerReady, isPaused, startTime]);
+
+   // WebSocket状態管理
+    useEffect(() => {
+      if (ws) {
+        ws.onmessage = handleMessage;
+      } 
+      return () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    }, [ws]);
 
   const renderQuestion = () => {
     switch (type) {
@@ -148,6 +129,38 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
         return <ShortQuestion displayText={displayText} choices={choices} />;
     }
   }
+  
+  const handleMessage = (event) => {
+    try {
+      const data = JSON.parse(event.data); // 受け取ったメッセージを解析
+      console.log('受信したメッセージ:', data);
+      if (!data.status) {
+        console.error("メッセージにstatusが含まれていません", data);
+        return;
+      }
+      console.log('受信したメッセージ:', data);
+  
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if(data.status == "timer_start"){
+          setIsReady(true);
+          setStartTime(data.startTime);
+        }else if(data.status == 'answer_given'){
+          handleAnswerGiven(data);
+        }else if(data.status == 'answer_unlock'){
+          handleAnswerUnlock(data);
+        }else if(data.status == 'answer_correct'){
+          handleAnswerCorrect(data);
+        }else if(data.status == 'game_end'){
+          onGameEnd(data);
+        }else{
+        console.log('未知のステータス:', data.status);
+        } 
+      }
+    }catch (error) {
+      console.error("受信したメッセージの解析エラー:", error);
+    }
+  };
 
   return (
     

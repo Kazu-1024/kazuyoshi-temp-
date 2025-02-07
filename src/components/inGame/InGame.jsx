@@ -18,17 +18,12 @@ const InGame = () => {
   const [showChoices, setShowChoices] = useState(false);
   const [isFastDisplay, setIsFastDisplay] = useState(false);  // 問題に正解してたらtrueにしたら問題文の表示が早くなるy
   const [isAnswering, setIsAnswering] = useState(false); // 対戦相手が解答中だったらtrueにしてね
-  const [isCorrect, setIsCorrect] = useState(null); // 解答が正解かどうか
-  const [timer, setTimer] = useState(null);
   const { ws, messageData } = useWebSocket();
-  const [questions, setQuestions] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [ableAnswer, setAbleAnswer] = useState([]);
   const [gameEnded, setGameEnded] = useState(null);
-  const [playerId, setPlayerId] = useState(null);
-  const [opponentId, setOpponentId] = useState(null);
-  const [isStarted, setIsStarted] = useState(null);
-  const [question, setQuestion] = useState({
+  const [questions, setQuestions] = useState([]);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const questionRef = useRef({
     id: null,
     questionType: '',
     questionText: '',
@@ -38,7 +33,7 @@ const InGame = () => {
   });
   const data = useRef();
   const playerIdRef = useRef(null);
-  const oppnentIdRef = useRef(null);
+  const opponentIdRef = useRef(null);
   const ableAnswerRef = useRef([]);
   const currentQuestionIndexRef = useRef(null);
   
@@ -52,39 +47,17 @@ const InGame = () => {
     console.log('受信したメッセージの詳細:', data);
     if (data.status === 'game_start' && data.questions) {
       // playerIdの設定を確認
-      setPlayerId(data.player1Id);
-      console.log('playerIdをセット:', data.player1Id);
+      playerIdRef.current = data.player1Id;
+      console.log('playerIdをセット:', playerIdRef.current);
   
       setUp(data);
     }
   }, []);
 
   useEffect(() => {
-    playerIdRef.current = playerId;
-    oppnentIdRef.current = opponentId;
-  }, [playerId]);
-
-  useEffect(() => {
     ableAnswerRef.current = ableAnswer;
     console.log("更新後の ableAnswer:", ableAnswerRef.current);
   },[ableAnswer]);
-
-  useEffect(() => {
-    currentQuestionIndexRef.current = currentQuestionIndex;  
-  },[currentQuestionIndex])
-  
-  // WebSocket接続の確立
-  useEffect(() => {
-  
-    if (ws) {
-      ws.onmessage = handleMessage;
-    } 
-    return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [ws]);
 
   useEffect(() => {
     //リロードされるとエラーが起きるので踏みとどまらせる処理(未完成)homeまで飛ばせばエラーが出ないはず
@@ -94,74 +67,36 @@ const InGame = () => {
         ws.send(JSON.stringify({
           room_id: messageData.room_id,
           type: 'surrender',
-          player_id: playerId,
+          player_id: playerIdRef.current,
         }));
         console.log("マッチキャンセルのメッセージを送信しました");
       }
-  
       const message = "ページを離れると降参されます。よろしいですか？";
-  
       // ブラウザに対して確認メッセージを表示させる
       event.returnValue = message; //確認メッセージを表示
       return message; 
     };
-  
     // beforeunloadイベントリスナーを登録
     window.addEventListener('beforeunload', handleBeforeUnload);
-  
     // クリーンアップ時にリスナーを解除
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [ws, messageData]);
   
-  
-  const handleMessage = (event) => {
-    try {
-      
-      const data = JSON.parse(event.data); // 受け取ったメッセージを解析
-      console.log('受信したメッセージ:', data);
-      if (!data.status) {
-        console.error("メッセージにstatusが含まれていません", data);
-        return;
-      }
-      console.log('受信したメッセージ:', data);
-  
-      if(data.status == 'answer_given') {
-        console.log(data);
-          handleAnswerGiven(data);
-      }else if(data.status == 'answer_unlock'){
-        handleAnswerUnlock(data);
-      }else if(data.status == 'answer_correct'){
-        handleAnswerCorrect(data);
-      }else if(data.status == 'timer_start'){
-        setTimer(20);
-      }else if(data.status == 'game_end'){
-        onGameEnd(data);
-      }else{
-        console.log('未知のステータス:', data.status);
-      }
-      } catch (error) {
-      console.error("受信したメッセージの解析エラー:", error);
-    }
-  };
-  
   const setUp = (data) => {
     // 対戦相手の名前を設定
     if (data.opponent) {
       console.log('対戦相手の名前を受信:', data.opponent);
-      setPlayerId(data.player1Id);
-      setOpponentId(data.opponent);
+      playerIdRef.current = data.player1Id;
+      opponentIdRef.current = data.opponent;
       setAbleAnswer([{ [data.opponent]: true, [data.player1Id]: true }]);
     }
-    
     console.log('問題データを受信:', data.questions);
     const formattedQs = formattedQuestions(data.questions);
-    
     setQuestions(formattedQs);
-    
     if (formattedQs.length > 0) {
-      setQuestion(formattedQs[0]);
+      questionRef.current = formattedQs[0];
     }
   };
   
@@ -176,12 +111,11 @@ const InGame = () => {
     }));
   };
   
-
   const handleAnswerGiven = (data) => {
     console.log('answer_given case に入りました');
     console.log(data);
     console.log(playerIdRef.current);
-    console.log(oppnentIdRef.current);
+    console.log(opponentIdRef.current);
     const answeredPlayerId = data.player_id;
     if (answeredPlayerId === playerIdRef.current) {
       console.log("回答権を獲得しました選択しをクリックしてください");
@@ -193,12 +127,10 @@ const InGame = () => {
       const prevObj = prev[0] || {};
       return [{ ...prevObj, [answeredPlayerId]: false }];
     });
-    
     setIsPaused(true);
     setIsLocked(true);
   };
 
-  
   const handleAnswerUnlock = (data) => {
     const answeredPlayerId = data.player_id;
   
@@ -213,17 +145,16 @@ const InGame = () => {
     console.log(!ableAnswerRef.current[0][playerIdRef.current]);
     setIsPaused(false);
     setIsAnswering(false);
+    setIsCorrect(false);  // 正解時に true
+    setTimeout(() => setIsCorrect(null), 500); // 2秒後にリセット
     console.log(ableAnswerRef.current);
     const allFalse = Object.values(ableAnswerRef.current[0]).every(value => value === false);
-
     if (allFalse) {
       setIsFastDisplay(true);
     }
-
   };
   const handleAnswerCorrect = (data) => {
     const answeredPlayerId = data.player_id;
-  
     if (answeredPlayerId !== playerIdRef.current) {
       setScoreB(prevScore => {
         const newScore = prevScore + 1;
@@ -236,10 +167,11 @@ const InGame = () => {
         return newScore;
       });
     }
-  
     console.log(`${data.player_id} が正解しました`);
     setIsPaused(false);
     setIsFastDisplay(true);
+    setIsCorrect(true);  // 正解時に true
+    setTimeout(() => setIsCorrect(null), 500); // 2秒後にリセット
   };
   
   const onAnswerTimeOut = () => {
@@ -247,25 +179,26 @@ const InGame = () => {
     ws.send(JSON.stringify({
       type: 'post_answer',
       roomId: roomId,
-      playerId: playerId,
+      playerId: playerIdRef.current,
       answer: '時間切れ',
       correct: false,
     }));
     setShowChoices(false);
+    setIsCorrect(false); 
+    setTimeout(() => setIsCorrect(null), 500); // 2秒後にリセット
   };
 
   const onSelectChoice = (choice) => {
-    console.log(question.correctAnswer);
-    const myChoice = question.choices[choice - 1];
+    console.log(questionRef.current.correctAnswer);
+    const myChoice = questionRef.current.choices[choice - 1];
     console.log("選択肢:", myChoice);
-    const jyati = myChoice === question.correctAnswer;
-    setIsCorrect(jyati);
+    const judge = myChoice === questionRef.current.correctAnswer;
     ws.send(JSON.stringify({
       type: 'post_answer',
       roomId: roomId,
-      playerId: playerId,
+      playerId: playerIdRef.current,
       answer: choice,
-      correct: jyati
+      correct: judge
     }));
     setShowChoices(false);
   };
@@ -274,51 +207,32 @@ const InGame = () => {
     ws.send(JSON.stringify({
       type: 'try_answer',
       roomId: roomId,
-      playerId: playerId
+      playerId: playerIdRef.current
     }));
   };
 
   const onNextQuestion = () => {
     if (gameEnded) return;
-  
-    if (currentQuestionIndex + 1 < questions.length) {
-      console.log("変更前", currentQuestionIndex);
-      console.log("変更前", currentQuestionIndexRef.current);
-  
+    if (currentQuestionIndexRef.current + 1 < questions.length) {
       // Stateを更新しつつ、Refの値も手動で更新
-      setCurrentQuestionIndex((prevIndex) => {
-        const newIndex = prevIndex + 1;
-        currentQuestionIndexRef.current = newIndex; // Refを明示的に更新
-        return newIndex;
-      });
-  
+      currentQuestionIndexRef.current += 1;
       console.log("変更あと", currentQuestionIndexRef.current);
-  
-      // 次の質問をセット（setStateの非同期性を考慮）
-      setTimeout(() => {
-        setQuestion(questions[currentQuestionIndexRef.current]);
-      }, 0);
-  
-      setIsCorrect(null);
+      questionRef.current = questions[currentQuestionIndexRef.current];
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);
-  
-      // opponentIdRef のスペルミス修正
-      setAbleAnswer([{ [oppnentIdRef.current]: true, [playerIdRef.current]: true }]);
+      setAbleAnswer([{ [opponentIdRef.current]: true, [playerIdRef.current]: true }]);
     } else {
       onGameEnd("lastQuestion");
     }
   };
   
-
   const onQuestionTimeOut = () => {
     console.log('問題のタイムアウト');
     onNextQuestion();
   };
 
   const onGameEnd = (data) => {
-    //ゲームの終了判定はまだしてない
   setGameEnded(true);
   console.log(data);
   const reason = data.reason;
@@ -329,17 +243,14 @@ const InGame = () => {
   } else if (reason === "point_reached") {
     result = {  winner: data.winner, loser: data.loser};
   } else {
-    // それ以外はスコアで勝者を決定
     result = { 
-      winner: scoreA > scoreB ? playerId : opponentId,
-      loser:  scoreA < scoreB ? playerId : opponentId,
+      winner: scoreA > scoreB ? playerIdRef.current : opponentIdRef.current,
+      loser:  scoreA < scoreB ? playerIdRef.current : opponentIdRef.current,
      };
   }
-  setTimeout(() => {
     navigate('/result', { 
       state: { result } 
     });
-  }, 2000);
   };
 
   return (
@@ -348,11 +259,11 @@ const InGame = () => {
           <GameStatus iconSrc={icon} hp={hpA} score={scoreA} isPlayerB={false}/>
           <GameStatus iconSrc={icon} hp={hpB} score={scoreB} isPlayerB={true}/>
           <div className="absolute right-0 left-0 mx-auto w-full text-center mt-2 z-10">
-            <p className="font-kdam text-4xl">Q{currentQuestionIndex + 1}</p>
+            <p className="font-kdam text-4xl">Q{currentQuestionIndexRef.current + 1}</p>
           </div>
         </div>
         <div className="h-[55%] relative">
-          <TimerQuestionDisplay type={question.questionType} questionText={question.questionText} choices={question.choices} explanation={question.explanation} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} isHost={isHost} setUp={setUp}/>
+          <TimerQuestionDisplay type={questionRef.current.questionType} questionText={questionRef.current.questionText} choices={questionRef.current.choices} explanation={questionRef.current.explanation} isPaused={isPaused} isFastDisplay={isFastDisplay} ws={ws} onQuestionTimeOut={onQuestionTimeOut} handleAnswerGiven={handleAnswerGiven}  handleAnswerUnlock={handleAnswerUnlock} handleAnswerCorrect={handleAnswerCorrect} onGameEnd={onGameEnd} setUp={setUp}/>
         </div>
         <div className="flex flex-col h-[31%] relative items-center justify-center">
           <AnswerButton isLocked={isLocked} onClick={handleAnswerClick}/>
