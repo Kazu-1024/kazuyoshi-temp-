@@ -26,7 +26,7 @@ const Result = () => {
 
   return (
     <>
-      <div className="relative flex flex-col h-full">
+      <div className="relative flex flex-col h-full w-full">
         {/* リザルト画面のheader部分 */}
         <div className="relative h-[14%] border-b-2 bg-white border-black shadow-md flex flex-col justify-center items-center">
           <div className="w-5/6 border-t border-2 border-gray-300 mt-2" />
@@ -35,7 +35,7 @@ const Result = () => {
           <img src={Tag1on1} className="absolute top-2 left-2 w-[27%]" />
         </div>
         {/* リザルト画面のmain部分 */}
-        <div className="flex flex-col items-center flex-grow">
+        <div className="flex flex-col items-center h-[86%]">
           <img src={ResultText} className="mx-auto mt-[5dvh] mb-3" />
           <div className="flex items-center w-5/6">
             <div className="w-2 h-2 bg-black rounded-full" />
@@ -43,9 +43,9 @@ const Result = () => {
             <div className="w-2 h-2 bg-black rounded-full" />
           </div>
           {/* 勝者と敗者の表示 */}
-          <div className="flex flex-col justify-between h-[26dvh] mt-16">
+          <div className="flex flex-col justify-between h-[50%] w-full">
             {/* 勝者セクション */}
-            <div className="w-72 h-1/2 mx-auto flex flex-grow">
+            <div className="w-11/12 h-1/2 mx-auto flex flex-grow justify-center items-center">
               <div className="flex flex-col bg-white w-72 h-20 rounded-lg relative">
                 <div className="w-5/6 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
@@ -53,8 +53,9 @@ const Result = () => {
                   <p className="text-lg mx-2">{result.winner}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgroud" className="block" />
-                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-xl outlined-bold">
-                      {result.winner}
+                    <p className="absolute inset-0 left-7 flex items-center justify-center text-white font-jaro tracking-wider text-[20px] outlined-bold">
+                      1512
+                      {/* {result.winner} */}
                     </p>
                   </div>
                 </div>
@@ -63,7 +64,7 @@ const Result = () => {
               </div>
             </div>
             {/* 敗者セクション */}
-            <div className="w-64 h-1/2 mx-auto flex flex-grow">
+            <div className="w-10/12 h-1/2 mx-auto flex flex-grow justify-center">
               <div className="flex flex-col bg-white w-72 h-20 rounded-lg relative">
                 <div className="w-11/12 border-t border border-gray-300 mt-2 mx-auto" />
                 <div className="flex items-center justify-between w-full h-full px-5 ">
@@ -71,8 +72,8 @@ const Result = () => {
                   <p className="text-[15px] mx-2">{result.loser}</p>
                   <div className="relative w-1/3">
                     <img src={ratingBg} alt="Rating Backgrond" className="block" />
-                    <p className="absolute inset-0 left-5 flex items-center justify-center text-white font-jaro tracking-wider text-[14px] outlined-bold">
-                      {result.loser.rate}
+                    <p className="absolute inset-0 left-7 flex items-center justify-center text-white font-jaro tracking-wider text-[17px] outlined-bold">
+                      1486
                     </p>
                   </div>
                 </div>
@@ -82,7 +83,7 @@ const Result = () => {
             </div>
           </div>
           {/* 共有リンクとボタンのセクション */}
-          <div className="flex flex-col items-center w-full mt-auto">
+          <div className="flex flex-col items-center w-full h-[30%]">
             {/* 共有リンクをとりあえず画像で表示してる */}
             {/* <div className="w-64 h-16 rounded-full bg-gray-400 mb-10">
             </div> */}

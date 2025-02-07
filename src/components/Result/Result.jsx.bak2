@@ -1,0 +1,44 @@
+import React, {useState} from 'react'
+import { useNavigate, useLocation } from 'react-router-dom';
+import Tag1on1 from '../../assets/images/1on1_tag.png';
+import ResultText from '../../assets/images/ResultText.png'
+import defaultIcon from '../../assets/images/defaultIcon.png';
+import HomeRouteButton from '../../assets/images/homeRouteButton.png';
+import ratingBg from "../../assets/images/ratingBg.png";
+import shareImg from "../../assets/images/share.png";
+
+const Result = () => {
+  // const navigate = useNavigate();
+  // const location = useLocation();
+  // const result = location.state?.result;
+  // console.log(location.state);
+  
+  // // LocalStorageから情報を取得
+  // const [resultData, setResultData] = useState(() => {
+    
+  //   // スコアを比較して勝者と敗者を決定
+  //   const winner = result.winner; 
+  
+  //   const loser = result.loser;
+
+  //   return { winner, loser };
+  // });
+
+  const [result, setResult] = useState(() =>{
+    const winner = "Player1";
+    const loser = "Player2";
+    return { winner, loser };
+  });
+
+  return (
+    <>
+      <div className="h-full w-full">
+        <div className="">
+
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default Result
