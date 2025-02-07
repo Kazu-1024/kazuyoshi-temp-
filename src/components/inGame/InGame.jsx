@@ -258,13 +258,14 @@ const InGame = () => {
     console.log(question.correctAnswer);
     const myChoice = question.choices[choice - 1];
     console.log("選択肢:", myChoice);
-    const isCorrect = myChoice === question.correctAnswer;
+    const jyati = myChoice === question.correctAnswer;
+    setIsCorrect(jyati);
     ws.send(JSON.stringify({
       type: 'post_answer',
       roomId: roomId,
       playerId: playerId,
       answer: choice,
-      correct: isCorrect
+      correct: jyati
     }));
     setShowChoices(false);
   };
@@ -298,6 +299,7 @@ const InGame = () => {
         setQuestion(questions[currentQuestionIndexRef.current]);
       }, 0);
   
+      setIsCorrect(null);
       setIsFastDisplay(false);
       setIsLocked(false);
       setIsPaused(false);

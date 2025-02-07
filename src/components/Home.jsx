@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import selectStyle from '../assets/images/style_select.png';
 import startButton from '../assets/images/startButton.png';
@@ -8,6 +8,15 @@ import Dropdown from './common/Dropdown';
 
 const Home = () => {
   const navigate = useNavigate();
+  
+  // Cookieチェックを追加
+  useEffect(() => {
+    const cookies = document.cookie;
+    if (!cookies) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [rate, SetRate] = useState(1314);
 
   const [selectedOption, setSelectedOption] = useState("");  // 選択した項目
@@ -48,6 +57,5 @@ const Home = () => {
     </div>
   );
 }
-
 
 export default Home;

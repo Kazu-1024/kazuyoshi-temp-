@@ -10,7 +10,7 @@ const AnswerAnimation = ({ isCorrect }) => {
       setShowImage(true);
       const timer = setTimeout(() => {
         setShowImage(false);
-      }, 2000);
+      }, 500);
 
       return () => clearTimeout(timer);
     }
