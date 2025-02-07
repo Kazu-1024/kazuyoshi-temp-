@@ -21,12 +21,26 @@ const Home = () => {
   const [rate, SetRate] = useState(1314);
 
   const [selectedOption, setSelectedOption] = useState("");  // 選択した項目
+  
   // オプションが選ばれた時の処理
   const handleOptionSelect = (option) => {
     setSelectedOption(option.label);  // 選ばれた項目を設定
   };
+
   const handleImageClick = () => {
+    // ダミー音声合成を実行
+    var speechSynthesis = window.speechSynthesis;
+    var utterance = new SpeechSynthesisUtterance('');
+    utterance.volume = 0; // 音量を0に設定
+    speechSynthesis.speak(utterance);
+
+    // ダミー音声が再生されたことをコンソールに表示
+    console.log("ダミー音声が再生されました (音量0)");
+
     setIsReadyToPlay(true); // 音声再生準備が完了したことを知らせる
+
+    // Matchingに遷移
+    navigate('/Matching');
   };
 
   return (
@@ -45,8 +59,8 @@ const Home = () => {
       {/* 画像とボタン */}
       <div className="relative flex flex-col items-center justify-center aspect-square w-9/12 max-h-96 mx-auto mt-5">
         <img src={selectStyle} className="w-full h-full object-contain" alt="Style Select" />
-        <button className="absolute bottom-[8%] transform -translate-y-1/2 w-1/2 h-[20px] flex items-center justify-center aspect-[5/1]" onClick={() => navigate('/Matching')}>
-          <img src={startButton} alt="Start Button" className="object-cover" onClick={handleImageClick} />
+        <button className="absolute bottom-[8%] transform -translate-y-1/2 w-1/2 h-[20px] flex items-center justify-center aspect-[5/1]" onClick={handleImageClick}>
+          <img src={startButton} alt="Start Button" className="object-cover" />
         </button>
       </div>
 

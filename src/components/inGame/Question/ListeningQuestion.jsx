@@ -12,7 +12,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     const handlePlay = () => {
         if (speechSynthesisRef.current) {
             let lang = "en-US";
-            let voiceName = "Google US English";  // Chrome, Firefox, Edgeの場合の音声設定
+            let voiceName = "Google US English"; 
 
             // 音声を設定
             setVoice(lang, voiceName);
@@ -40,11 +40,17 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     const setVoice = (lang, voiceName) => {
         const voices = speechSynthesis.getVoices();
         const selectedVoice = voices.find(voice => voice.lang === lang && voice.name === voiceName);
-
+    
         if (selectedVoice) {
             utteranceRef.current.voice = selectedVoice;
         } else {
-            console.error("指定した音声が見つかりません");
+            // サポートされていない場合はデフォルト音声を使用
+            const fallbackVoice = voices.find(voice => voice.lang === lang); 
+            if (fallbackVoice) {
+                utteranceRef.current.voice = fallbackVoice;
+            } else {
+                utteranceRef.current.voice = voices[0];
+            }
         }
     };
 
