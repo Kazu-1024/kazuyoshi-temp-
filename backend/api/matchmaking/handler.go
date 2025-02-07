@@ -113,6 +113,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	//messageを監視する関数
 	go handlePlayerMessages(conn, cookie.Value, newRoom)
+	waitForMatch(newRoom)
 	
 	select {}
 }
@@ -123,8 +124,8 @@ func generateRoomID() string {
 }
 
 func waitForMatch(room *Room) bool {
-	// タイムアウト時間を300秒に延長
-	ticker := time.NewTicker(300 * time.Second)
+	// デモ時に違う部屋に入ることを防ぎたいのでタイムアウトを10秒に変更
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -356,43 +357,6 @@ func determineWinner(room *Room, reason string) {
 	delete(rooms, room.ID)
 	roomsMutex.Unlock()
 }
-
-
-
-
-// // レート計算と更新
-// func updatePlayerRatings(db *sql.DB, winnerID, loserID string) {
-// 	if winnerID == "draw" {
-// 		return // 引き分けの場合はレーティング更新なし
-// 	}
-
-// 	// レート更新のリクエストを作成
-// 	rateRequest := rate.RatingRequest{
-// 		WinnerID: winnerID,
-// 		LoserID:  loserID,
-// 		GameType: "quiz",
-// 	}
-
-// 	// レート計算ハンドラーを使用してレートを更新
-// 	handler := rate.CalculateRatingHandler(db)
-
-// 	// リクエストを作成
-// 	reqBody, _ := json.Marshal(rateRequest)
-// 	req, _ := http.NewRequest("POST", "/calculate-rating", bytes.NewBuffer(reqBody))
-
-// 	// レスポンスを受け取るためのRecorderを作成
-// 	w := httptest.NewRecorder()
-
-// 	// ハンドラーを実行
-// 	handler.ServeHTTP(w, req)
-
-// 	// エラーチェック
-// 	if w.Code != http.StatusOK {
-// 		log.Printf("レート更新エラー: %v", w.Body.String())
-// 		return
-// 	}
-// }
-
 // InitDB データベース接続を初期化する
 func InitDB(database *sql.DB) {
 	db = database
