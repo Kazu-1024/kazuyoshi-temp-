@@ -9,6 +9,7 @@ import (
 	"sys3/api/friends"
 	"sys3/api/matchmaking"
 	"sys3/api/question"
+	"sys3/api/vocabulary"
 	"sys3/api/rate"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -63,6 +64,8 @@ func main() {
 	r.HandleFunc("/getusername", account.GetUsernameHandler(db)).Methods("GET")
 	r.HandleFunc("/postquestions", question.MakeQuestionHandler(db)).Methods("POST","OPTIONS")
 	r.HandleFunc("/getquestions", question.GetQuestionHandler(db)).Methods("GET","OPTIONS")
+	r.HandleFunc("/postvocabularys", vocabulary.MakeVocabularyHandler(db)).Methods("POST","OPTIONS")
+	r.HandleFunc("/getvocabularys", vocabulary.GetVocabularyHandler(db)).Methods("GET","OPTIONS")
 	r.HandleFunc("/friends/request", friends.SendFriendRequestHandler(db)).Methods("POST")
 	r.HandleFunc("/friends/respond", friends.RespondToFriendRequestHandler(db)).Methods("POST")
 	r.HandleFunc("/friends/pending", friends.GetPendingRequestsHandler(db)).Methods("GET")

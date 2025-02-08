@@ -1,4 +1,4 @@
-package question
+package vocabulary
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
+func MakeVocabularyHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// ユーザー認証の確認
 		cookie, err := r.Cookie("username")
@@ -16,31 +16,25 @@ func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// リクエストボディの解析
-		var question Question
-		if err := json.NewDecoder(r.Body).Decode(&question); err != nil {
+		var vocabulary Vocabulary
+		if err := json.NewDecoder(r.Body).Decode(&vocabulary); err != nil {
 			http.Error(w, "無効なリクエストデータです", http.StatusBadRequest)
 			return
 		}
 
-		// バリデーション
-		if len(question.Choices) != 4 {
-			http.Error(w, "選択肢は4つ必要です", http.StatusBadRequest)
-			return
-		}
+		// // バリデーション
+		// if len(question.Choices) != 4 {
+		// 	http.Error(w, "選択肢は4つ必要です", http.StatusBadRequest)
+		// 	return
+		// }
 
 		// データベースに問題を保存
 		_, err = db.Exec(
-			"INSERT INTO questions (creator_username, question_type, question_text, correct_answer, choice1, choice2, choice3, choice4, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO vocabulary_book (creator_username, vocabulary, meaning) VALUES (?, ?, ?)",
 			cookie.Value,
-			question.QuestionType, // 新しいquestion_typeを追加
-			question.QuestionText,
-			question.CorrectAnswer,
-			question.Choices[0],
-			question.Choices[1],
-			question.Choices[2],
-			question.Choices[3],
-			question.Explanation,
-		)
+			vocabulary.VocabularyText,
+			vocabulary.Meaning,
+			)
 
 		if err != nil {
 			http.Error(w, "問題の保存に失敗しました", http.StatusInternalServerError)
@@ -55,7 +49,7 @@ func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // とりあえずいったん全ての問題を取得するハンドラー
-func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
+func GetVocabularyHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// クッキーから username を取得
 		cookie, err := r.Cookie("username")
@@ -72,9 +66,8 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 
 		// データベースから指定されたユーザーの問題を取得
 		rows, err := db.Query(`
-			SELECT id, creator_username, question_type, question_text, correct_answer, 
-			       choice1, choice2, choice3, choice4, explanation 
-			FROM questions
+			SELECT id, creator_username, vocabulary,meaning
+			FROM vocabulary_book
 			WHERE creator_username = ?`, name)
 		if err != nil {
 			http.Error(w, "問題の取得に失敗しました", http.StatusInternalServerError)
@@ -83,28 +76,20 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 		defer rows.Close()
 
 		// 問題のスライスを作成
-		var questions []Question
+		var vocabulary []Vocabulary
 		for rows.Next() {
-			var q Question
-			var choices [4]string
+			var q Vocabulary
 			err := rows.Scan(
 				&q.ID,
 				&q.CreatorUsername,
-				&q.QuestionType, // 追加
-				&q.QuestionText,
-				&q.CorrectAnswer,
-				&choices[0],
-				&choices[1],
-				&choices[2],
-				&choices[3],
-				&q.Explanation,
+				&q.VocabularyText, 
+				&q.Meaning, 
 			)
 			if err != nil {
 				http.Error(w, "データの読み取りに失敗しました", http.StatusInternalServerError)
 				return
 			}
-			q.Choices = choices[:]
-			questions = append(questions, q)
+			vocabulary = append(vocabulary, q)
 		}
 
 		// エラーチェック
@@ -114,6 +99,6 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// 結果をJSONで返す
-		json.NewEncoder(w).Encode(questions)
+		json.NewEncoder(w).Encode(vocabulary)
 	}
 }

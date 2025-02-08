@@ -11,6 +11,7 @@ import Matching from "./components/matching/Matching";
 import MatchLoading from "./components/matching/MatchLoading";
 import CreateQuestions from "./components/CreateQuestions";
 import CreateQuestions_details from "./components/CreateQuestions_details";
+import CreateVocabulary from "./components/Create_Vocabulary";
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import { WebSocketProvider } from './WebSocketContext';
@@ -41,6 +42,7 @@ function App() {
               <Route path="/UserDetails" element={<UserDetails />} />
               <Route path="/CreateQuestions" element={<CreateQuestions />} />
               <Route path="/CreateQuestions_details" element={<CreateQuestions_details />} />
+              <Route path="/CreateVocabulary" element={<CreateVocabulary />} />
               {/* 対戦 */}
               <Route path="/InGame" element={<WebSocketProvider><InGame /></WebSocketProvider>} />
               <Route path="/Matching" element={<WebSocketProvider><Matching /></WebSocketProvider>} />
