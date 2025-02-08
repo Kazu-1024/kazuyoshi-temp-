@@ -4,6 +4,7 @@ import selectStyle from '../assets/images/style_select.png';
 import startButton from '../assets/images/startButton.png';
 import ratingBg from '../assets/images/ratingBg.png';
 import HelpCircle from '../assets/images/HelpCircle.png';
+import ranking from '../assets/images/ranking.png';
 import Dropdown from './common/Dropdown';
 
 const Home = () => {
@@ -26,7 +27,9 @@ const Home = () => {
   const handleOptionSelect = (option) => {
     setSelectedOption(option.label);  // 選ばれた項目を設定
   };
-
+  const rankingpage = () => {
+    navigate('/rankings')
+  }
   const handleImageClick = () => {
     // ダミー音声合成を実行
     var speechSynthesis = window.speechSynthesis;
@@ -72,6 +75,16 @@ const Home = () => {
           <img src={HelpCircle} className="w-10 h-10" alt="Help" />
         </button>
       </div>
+      {/*ランキングボタン */}
+      <div className="absolute bottom-[10%] right-2 mb-2">
+        <button onClick={() => {
+          rankingpage();
+          console.log('ランキングボタンがクリックされました');
+        }}>
+          <img src={ranking} className="w-10 h-10" alt="Help" />
+        </button>
+      </div>
+
     </div>
   );
 }

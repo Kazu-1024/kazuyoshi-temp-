@@ -3,7 +3,7 @@ import React from 'react'
 const UserDetails = () => {
   return (
     <>
-        <h1>ユーザー詳細</h1>
+        <h1>フレンド詳細</h1>
     </>
   )
 }
