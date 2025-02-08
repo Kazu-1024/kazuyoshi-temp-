@@ -161,53 +161,57 @@ func InitPlayers(room *Room) {
 }
 
 func handleGameSession(room *Room) {
-	if room.Player1Conn == nil || room.Player2Conn == nil {
+    if room.Player1Conn == nil || room.Player2Conn == nil {
         log.Println("playerがそろっていないためゲームを開始できません")
         return
     }
-	// 問題を一括で取得
-	questions, err := fetchQuestions(10)
-	if err != nil {
-		log.Printf("問題取得エラー: %v", err)
-		return
-	}
+    // 問題を一括で取得
+    questions, err := fetchQuestions(10)
+    if err != nil {
+        log.Printf("問題取得エラー: %v", err)
+        return
+    }
 
-	InitPlayers(room)
+    InitPlayers(room)
 
-	// ゲーム開始メッセージと問題データを送信
-	startMessage := map[string]interface{}{
-		"status":    "game_start",
-		"message":   "対戦を開始します",
-		"questions": questions,
-		"opponent":  room.Player2ID,
-		"player1Id": room.PlayerID,
-		"gameStartTime": time.Now().Format(time.RFC3339),
-	}
+    // 1秒待機
+    time.Sleep(1 * time.Second)
 
-	if room.Player2Conn != nil {
+    // ゲーム開始メッセージと問題データを送信
+    startMessage := map[string]interface{}{
+        "status":        "game_start",
+        "message":       "対戦を開始します",
+        "questions":     questions,
+        "opponent":      room.Player2ID,
+        "player1Id":     room.PlayerID,
+        "gameStartTime": time.Now().Format(time.RFC3339),
+    }
+
+    if room.Player2Conn != nil {
         room.Player1Conn.WriteJSON(startMessage)
     }
 
-	// Player2用のメッセージを作成（opponentをPlayer1の名前に設定）
-	player2Message := map[string]interface{}{
-		"status":    "game_start",
-		"message":   "対戦を開始します",
-		"questions": questions,
-		"opponent":  room.PlayerID,
-		"player1Id": room.Player2ID,
-		"gameStartTime": time.Now().Format(time.RFC3339),
-	}
-	if room.Player1Conn != nil {
+    // Player2用のメッセージを作成（opponentをPlayer1の名前に設定）
+    player2Message := map[string]interface{}{
+        "status":        "game_start",
+        "message":       "対戦を開始します",
+        "questions":     questions,
+        "opponent":      room.PlayerID,
+        "player1Id":     room.Player2ID,
+        "gameStartTime": time.Now().Format(time.RFC3339),
+    }
+
+    if room.Player1Conn != nil {
         room.Player2Conn.WriteJSON(player2Message)
     }
 
-	log.Print(players[room.PlayerID])
+    log.Print(players[room.PlayerID])
 
-	// 各プレイヤーのメッセージを監視
-	go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
-	go handlePlayerMessages(room.Player2Conn, room.Player2ID, room)
-
+    // 各プレイヤーのメッセージを監視
+    go handlePlayerMessages(room.Player1Conn, room.PlayerID, room)
+    go handlePlayerMessages(room.Player2Conn, room.Player2ID, room)
 }
+
 
 func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 	for {

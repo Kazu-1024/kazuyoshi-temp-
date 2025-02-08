@@ -17,9 +17,13 @@ const Matching = () => {
   const [data, setData] = useState(null);
   const { ws, messageData } = useWebSocket(); // WebSocketとメッセージデータを取得
   const [isHost, setIsHost] = useState(false);
-
+  //コンテキストでとるしか思いつかなかったので
   // WebSocket接続の確立
   useEffect(() => {
+    checkStatus(messageData);
+  }, [messageData]);
+
+  const checkStatus = (messageData) =>{
     if (messageData) {
       console.log("受信したメッセージ:", messageData);
       switch (messageData.status) {
@@ -48,30 +52,9 @@ const Matching = () => {
         default:
           console.log('未処理のメッセージタイプ:', messageData.status);
           setIsHost(true);
-    }
-    
-    }
-    const handleBeforeUnload = (event) => {
-      if (ws && ws.readyState === WebSocket.OPEN && messageData) {
-        ws.send(JSON.stringify({
-          room_id: messageData.room_id,
-          type: 'match_cancel'
-        }));
-        console.log("マッチキャンセルのメッセージを送信しました");
       }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // クリーンアップ時にリスナーを解除
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-
-  }, [messageData]); // メッセージデータが変わるたびにログを表示
-
-    
-
+    }
+  };
   // レート取得用のuseEffect
   useEffect(() => {
     const fetchUserRate = async () => {
