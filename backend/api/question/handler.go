@@ -58,7 +58,7 @@ func MakeQuestionHandler(db *sql.DB) http.HandlerFunc {
 func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// クッキーから username を取得
-		cookie, err := r.Cookie("id")
+		cookie, err := r.Cookie("username")
 		if err != nil {
 			http.Error(w, "ログインが必要です", http.StatusUnauthorized)
 			return
@@ -68,14 +68,14 @@ func GetQuestionHandler(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		// クッキーから取得した username を使用
-		userid := cookie.Value
+		name := cookie.Value
 
 		// データベースから指定されたユーザーの問題を取得
 		rows, err := db.Query(`
 			SELECT id, creator_username, question_type, question_text, correct_answer, 
 			       choice1, choice2, choice3, choice4, explanation 
 			FROM questions
-			WHERE id = ?`, userid)
+			WHERE creator_username = ?`, name)
 		if err != nil {
 			http.Error(w, "問題の取得に失敗しました", http.StatusInternalServerError)
 			return
