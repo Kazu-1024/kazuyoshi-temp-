@@ -3,6 +3,7 @@ import Tag1on1 from "../../assets/images/1on1_tag.png";
 import MTH from "../../assets/images/MTH.png";
 import RatingB from "../../assets/images/Frame_37.png";
 import ResultText from '../../assets/images/ResultText.png'
+import defaultIcon from "../../assets/images/defaultIcon.png"
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const MatchLoading = () => {
@@ -68,14 +69,14 @@ const MatchLoading = () => {
       </div>
       <div className="mt-16 flex justify-center" aria-label="読み込み中">
         <div className="mr-20">
-          <img src={MTH} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
+          <img src={defaultIcon} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
           <div className="flex">
             <img src={RatingB} alt="" className=" rounded-full" />
             <p>{userRate}</p>
           </div>
         </div>
         <div className="ml-20">
-          <img src={MTH} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
+          <img src={defaultIcon} alt="" className=" rounded-full h-12 w-12 ml-2 mr-4" />
           <div className="flex">
             <img src={RatingB} alt="" className=" rounded-full" />
             <p>{userRate}</p>
