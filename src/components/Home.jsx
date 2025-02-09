@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import selectStyle from '../assets/images/style_select.png';
 import startButton from '../assets/images/startButton.png';
-import ratingBg from '../assets/images/ratingBg.png';
-import HelpCircle from '../assets/images/HelpCircle.png';
 import ranking from '../assets/images/ranking.png';
 import Dropdown from './common/Dropdown';
 import PlayerRating from './common/PlayerRating';
+import Help from './common/Help'
 
 const Home = () => {
   const navigate = useNavigate();
@@ -71,13 +70,7 @@ const Home = () => {
       </div>
 
       {/* ヘルプボタン */}
-      <div className="absolute bottom-[10%] left-2 mb-2">
-        <button onClick={() => {
-          console.log('ヘルプボタンがクリックされました');
-        }}>
-          <img src={HelpCircle} role="presentation" draggable="false" className="w-10 h-10" alt="Help" />
-        </button>
-      </div>
+      <Help />
       {/*ランキングボタン */}
       <div className="absolute bottom-[10%] right-2 mb-2">
         <button onClick={() => {
