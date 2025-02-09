@@ -7,9 +7,8 @@ const PlayerRating = ({ username, position }) => {
     useEffect(() => {
         const fetchRating = async () => {
             try{
-                const endpoint = username ? `http://localhost:8080/rate/user?username=${username}` : "http://localhost:8080/rate/user";
-
-                console.log("Requesting with username:", username); // usernameを確認
+                const endpoint = `http://localhost:8080/rate/user${username ? `?username=${username}` : ""}`;
+                console.log("Requesting with username:", username);
 
                 const response = await fetch(endpoint, {
                     method: "GET",
@@ -29,11 +28,11 @@ const PlayerRating = ({ username, position }) => {
         };
 
         fetchRating();
-    }, []);
+    }, [username]);
 
     const positionStyle = {
         "home": "absolute right-1 top-1 w-24",
-        "resultWinners": ""
+        "result": "relative w-24"
     }
     return (
         <>
