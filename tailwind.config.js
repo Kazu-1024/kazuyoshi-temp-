@@ -19,6 +19,7 @@ module.exports = {
         anton: ['Anton', 'sans-serif'],
         afacad: ['afacad', 'sans-serif'],
         jaro: ['jaro', 'sans-serif'],
+        francois: ['Francois One', 'sans-serif'],
       }
     },
   },
