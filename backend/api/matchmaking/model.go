@@ -23,6 +23,7 @@ type Room struct {
 	Player2Conn *websocket.Conn
 	CreatedAt   time.Time
 	IsMatched   bool
+	FirstAnswerTime int64
 }
 
 // GameState ゲームの状態を管理する構造体
