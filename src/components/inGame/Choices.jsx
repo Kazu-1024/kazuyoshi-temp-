@@ -52,7 +52,7 @@ return (
             </div>
           </div>
           <div className="w-11/12 h-24 m-auto bg-[rgba(255,255,255,0.8)] border-black shadow-xl shadow-shadowTop">
-            <div className="grid grid-cols-4 gap-4 px-4 pt-4 items-center">
+            <div className="grid grid-cols-4 gap-x-8 px-4 pt-4 items-center justify-items-center">
               {choices.map((choice, index) => (
                 <ChoiceButton
                   key={index}
