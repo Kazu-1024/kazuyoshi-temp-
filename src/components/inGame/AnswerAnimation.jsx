@@ -22,7 +22,7 @@ const AnswerAnimation = ({ isCorrect }) => {
   return (
     <>
       {showImage && (
-        <div className="absolute mt-40 top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none animate-fadeInOut">
+        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none animate-fadeInOut">
           <img
             src={isCorrect ? correct : incorrect}
             alt={isCorrect ? "Correct" : "Incorrect"}
