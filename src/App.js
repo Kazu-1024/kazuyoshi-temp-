@@ -20,8 +20,8 @@ function App() {
   const location = useLocation();
 
   // バックエンドのパス指定に合わせてheaderとfooterのパスの調整
-  const hideHeaderPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result","/InGame"];
-  const hideFooterPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result","/InGame"];
+  const hideHeaderPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result","/InGame", "/CreateQuestions_details"];
+  const hideFooterPaths = ["/ingame", "/login", "/Matching", "/matchloading", "/result","/InGame", "/CreateQuestions_details"];
 
   return (
       <>
