@@ -12,7 +12,7 @@ const AnswerButton = ({ isLocked, onClick }) => {
               }}
               disabled={isLocked}
             >
-            <img src={Button} alt="button" draggable="false" className="w-full h-full object-contain" />
+            <img src={Button} alt="button" role="presentation" draggable="false"  className="w-full h-full object-contain" />
         </button>
     </>
   )
