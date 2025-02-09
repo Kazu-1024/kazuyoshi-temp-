@@ -1,35 +1,47 @@
 import React, {useState, useEffect} from 'react'
 import ratingBg from '../../assets/images/ratingBg.png'
 
-const PlayerRating = ({ username }) => {
-    const [playerRate, setPlayerRate] = useState(1500);
+const PlayerRating = ({ username, position }) => {
+    const [PlayerRating, setPlayerRating] = useState(1500);
 
     useEffect(() => {
         const fetchRating = async () => {
             try{
                 const endpoint = username ? `http://localhost:8080/rate/user?username=${username}` : "http://localhost:8080/rate/user";
 
+                console.log("Requesting with username:", username); // usernameを確認
+
                 const response = await fetch(endpoint, {
                     method: "GET",
                     credentials: "include"
                 });
+
+                if (!response.ok) {
+                    throw new Error("レートの取得に失敗");
+                }
+
+                const data = await response.json();
+                console.log(data);
+                setPlayerRating(data.rating);
             } catch (error) {
                 console.error(error);
-            }
+            } 
         };
-    }, [username]);
+
+        fetchRating();
+    }, []);
 
     const positionStyle = {
-        "home": "absolute right-1 top-1",
+        "home": "absolute right-1 top-1 w-24",
         "resultWinners": ""
     }
     return (
         <>
-            <div className="absolute" >
+            <div className={positionStyle[position]} >
                 <div className="relative">
-                    <img src={ratingBg} alt="ratingBg" role="presentation" draggable="false" className="w-full h-full object-contain" />
-                    <p className="absolute">
-                        {playerRate}
+                    <img src={ratingBg} alt="ratingBg" role="presentation" draggable="false" className="w-full h-full object-cover" />
+                    <p className="absolute inset-0 left-10 flex items-center text-black font-jaro tracking-wider text-xl outlined-bold">
+                        {PlayerRating}
                     </p>
                 </div>
 
