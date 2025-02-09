@@ -57,7 +57,7 @@ const Home = () => {
         </p>
       </div> */}
 
-      <PlayerRating username="ryuya" position="home"/>
+      <PlayerRating position="home"/>
 
       {/* プルダウンコンポーネントを呼び出し */}
       <Dropdown selectedOption={selectedOption} setOptionSelect={handleOptionSelect} />
