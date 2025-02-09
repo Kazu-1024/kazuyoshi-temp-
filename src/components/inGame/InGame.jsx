@@ -44,11 +44,9 @@ const InGame = () => {
 
   useEffect(() => {
     let data = messageData;
-    console.log('受信したメッセージの詳細:', data);
     if (data.status === 'game_start' && data.questions) {
       // playerIdの設定を確認
       playerIdRef.current = data.player1Id;
-      console.log('playerIdをセット:', playerIdRef.current);
   
       setUp(data);
     }
@@ -56,7 +54,6 @@ const InGame = () => {
 
   useEffect(() => {
     ableAnswerRef.current = ableAnswer;
-    console.log("更新後の ableAnswer:", ableAnswerRef.current);
   },[ableAnswer]);
 
   useEffect(() => {
@@ -69,7 +66,6 @@ const InGame = () => {
           type: 'surrender',
           player_id: playerIdRef.current,
         }));
-        console.log("マッチキャンセルのメッセージを送信しました");
       }
       const message = "ページを離れると降参されます。よろしいですか？";
       // ブラウザに対して確認メッセージを表示させる
@@ -87,12 +83,10 @@ const InGame = () => {
   const setUp = (data) => {
     // 対戦相手の名前を設定
     if (data.opponent) {
-      console.log('対戦相手の名前を受信:', data.opponent);
       playerIdRef.current = data.player1Id;
       opponentIdRef.current = data.opponent;
       setAbleAnswer([{ [data.opponent]: true, [data.player1Id]: true }]);
     }
-    console.log('問題データを受信:', data.questions);
     const formattedQs = formattedQuestions(data.questions);
     setQuestions(formattedQs);
     if (formattedQs.length > 0) {
@@ -112,13 +106,8 @@ const InGame = () => {
   };
   
   const handleAnswerGiven = (data) => {
-    console.log('answer_given case に入りました');
-    console.log(data);
-    console.log(playerIdRef.current);
-    console.log(opponentIdRef.current);
     const answeredPlayerId = data.player_id;
     if (answeredPlayerId === playerIdRef.current) {
-      console.log("回答権を獲得しました選択しをクリックしてください");
       setShowChoices(true);
     } else {
       setIsAnswering(true);
@@ -137,18 +126,13 @@ const InGame = () => {
     if (answeredPlayerId !== playerIdRef.current) {
       setHpB(prevHp => prevHp - 1);
     } else {
-      console.log('回答権を失います');
       setHpA(prevHp => prevHp - 1);
     }
     setIsLocked(!ableAnswerRef.current[0][playerIdRef.current]);
-    console.log(playerIdRef.current);
-    console.log("あなたの回答権",)
-    console.log(!ableAnswerRef.current[0][playerIdRef.current]);
     setIsPaused(false);
     setIsAnswering(false);
     setIsCorrect(false);  // 正解時に true
     setTimeout(() => setIsCorrect(null), 500); // 2秒後にリセット
-    console.log(ableAnswerRef.current);
     const allFalse = Object.values(ableAnswerRef.current[0]).every(value => value === false);
     if (allFalse) {
       setIsFastDisplay(true);
@@ -160,7 +144,7 @@ const InGame = () => {
       setScoreB(prevScore => {
         const newScore = prevScore + 1;
         setIsAnswering(false);
-        return newScore;A
+        return newScore;
       });
     } else {
       setScoreA(prevScore => {
@@ -168,7 +152,6 @@ const InGame = () => {
         return newScore;
       });
     }
-    console.log(`${data.player_id} が正解しました`);
     setIsPaused(false);
     setIsFastDisplay(true);
     setIsCorrect(true);  // 正解時に true
@@ -176,7 +159,6 @@ const InGame = () => {
   };
   
   const onAnswerTimeOut = () => {
-    console.log('解答のタイムアウト');
     ws.send(JSON.stringify({
       type: 'post_answer',
       roomId: roomId,
@@ -190,9 +172,7 @@ const InGame = () => {
   };
 
   const onSelectChoice = (choice) => {
-    console.log(questionRef.current.correctAnswer);
     const myChoice = questionRef.current.choices[choice - 1];
-    console.log("選択肢:", myChoice);
     const judge = myChoice === questionRef.current.correctAnswer;
     ws.send(JSON.stringify({
       type: 'post_answer',
@@ -215,30 +195,28 @@ const InGame = () => {
 
   const onNextQuestion = () => {
     if (gameEnded) return;
-    if (currentQuestionIndexRef.current + 1 < questions.length) {
-      // Stateを更新しつつ、Refの値も手動で更新
-      currentQuestionIndexRef.current += 1;
-      console.log("変更あと", currentQuestionIndexRef.current);
-      questionRef.current = questions[currentQuestionIndexRef.current];
-      setIsFastDisplay(false);
-      setIsLocked(false);
-      setIsPaused(false);
-      setAbleAnswer([{ [opponentIdRef.current]: true, [playerIdRef.current]: true }]);
-    } else {
-      onGameEnd("lastQuestion");
-    }
+    setTimeout(() => {
+      if (currentQuestionIndexRef.current + 1 < questions.length) {
+        // Stateを更新しつつ、Refの値も手動で更新
+        currentQuestionIndexRef.current += 1;
+        questionRef.current = questions[currentQuestionIndexRef.current];
+        setIsFastDisplay(false);
+        setIsLocked(false);
+        setIsPaused(false);
+        setAbleAnswer([{ [opponentIdRef.current]: true, [playerIdRef.current]: true }]);
+      } else {
+        onGameEnd("lastQuestion");
+      }
+    },5000);
   };
   
   const onQuestionTimeOut = () => {
-    console.log('問題のタイムアウト');
     onNextQuestion();
   };
 
   const onGameEnd = (data) => {
   setGameEnded(true);
-  console.log(data);
   const reason = data.reason;
-  console.log(data.reason);
   let result;
   if (reason === "hp_zero") {
     result = {  winner: data.winner, loser: data.loser};

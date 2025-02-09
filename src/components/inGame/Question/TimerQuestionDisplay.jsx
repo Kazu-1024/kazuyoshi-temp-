@@ -23,7 +23,6 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
   // 文字を1文字ずつ表示（問題文の表示中はタイマーを動かさない）
    useEffect(() => {
     if (!questionText || isTimerReady || type === "listening") return;
-
     if (!isPaused) {
       displayTextTimerRef.current = setInterval(() => {
         setDisplayText((prev) => {
@@ -57,7 +56,6 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
   //リスニングの処理
   useEffect(() => {
     if (!questionText || isTimerReady || type !== "listening") return;
-
     if (!isPaused) {
       setIsReading(true);
       setIsFinished(false);
@@ -84,26 +82,8 @@ const handleReadingEnd = () => {
 
   useEffect(() => {
     if (!isReady || !startTime) return;
-
+    console.log("isredey:",isReady,"startTime:",startTime,"isPaused",isPaused);
     if (!isPaused) {
-      const updateTimer = () => {
-        const now = Date.now();
-        const diff = 100 - Math.floor((now - startTime) / 100);
-
-        if (diff <= 0 || isFastDisplay) {
-          clearInterval(timerRef.current);
-          setTimeLeft(100);
-          setIsReady(false);
-          setStartTime(undefined);
-          setDisplayText("");
-          setIsTimerReady(false);
-          indexRef.current = 0;
-          onQuestionTimeOut();
-        } else {
-          setTimeLeft(diff);
-        }
-      };
-
       updateTimer();
       timerRef.current = setInterval(updateTimer, 100);
     }
@@ -144,6 +124,24 @@ const handleReadingEnd = () => {
         return <ShortQuestion displayText={displayText} choices={choices} />;
     }
   }
+  const updateTimer = () => {
+    const now = Date.now();
+    const diff = 100 - Math.floor((now - startTime) / 100);
+
+    if (diff <= 0 || isFastDisplay ) {
+      clearInterval(timerRef.current);
+      setTimeLeft(100);
+      setIsReady(false);
+      setStartTime(undefined);
+      setDisplayText("");
+      setIsTimerReady(false);
+      indexRef.current = 0;
+      console.log("二回実行される");
+      onQuestionTimeOut();
+    } else {
+      setTimeLeft(diff);
+    }
+  };
   
   const handleMessage = (event) => {
     try {

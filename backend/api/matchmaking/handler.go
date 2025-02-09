@@ -24,6 +24,7 @@ var (
 		WriteBufferSize: 1024,
 	}
 	db *sql.DB
+	isAnswerInvalid bool
 )
 
 // WebSocketを使用したマッチメイキングハンドラー
@@ -239,19 +240,24 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 		}else if message["type"] == "try_answer" {
 			// 早押し成功通知を両プレイヤーに送信
 			log.Println("早押しボタンが押されました")
-			var timeNow  = time.Now().UnixMilli()
+			var timeNow = time.Now().UnixMilli()
+		
+			// 0.5秒以内に押された場合、無効とする
 			if room.FirstAnswerTime > 0 && (timeNow-room.FirstAnswerTime) <= 500 {
+				isAnswerInvalid = true
 				log.Println("他のプレイヤーが0.5秒以内に押しているため無効:")
-				return
+			} else {
+				// 無効でない場合、回答処理を行う
+				room.FirstAnswerTime = timeNow
+		
+				answerMessage := map[string]interface{}{
+					"status":    "answer_given",
+					"player_id": playerID,
+					"anserTime": timeNow,
+				}
+				room.Player1Conn.WriteJSON(answerMessage)
+				room.Player2Conn.WriteJSON(answerMessage)
 			}
-			room.FirstAnswerTime = timeNow
-			answerMessage := map[string]interface{}{
-				"status":   "answer_given",
-				"player_id": playerID,
-				"anserTime": timeNow,
-			}
-			room.Player1Conn.WriteJSON(answerMessage)
-			room.Player2Conn.WriteJSON(answerMessage)
 		}else if message["correct"] == true {
 			log.Printf("%dが正解しました",playerID)
 			players[playerID].Point += 1
