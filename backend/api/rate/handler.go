@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
+	"fmt"
 )
 
 const (
@@ -137,20 +138,25 @@ func UpdatePlayerRatings(db *sql.DB, winnerID string, winnerNewRating int, loser
 // GetUserRatingHandler ログインしているユーザーのレートを返すハンドラー
 func GetUserRatingHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// クッキーからユーザー名を取得
-		cookie, err := r.Cookie("username")
-		if err != nil {
-			http.Error(w, "ログインが必要です", http.StatusUnauthorized)
-			return
+        username := r.URL.Query().Get("username")
+        fmt.Println("Received username from query:", username) 
+		if username == "" {
+			// クッキーからユーザー名を取得
+			cookie, err := r.Cookie("username")
+			if err != nil {
+				http.Error(w, "ログインが必要です", http.StatusUnauthorized)
+				return
+			}
+			username = cookie.Value
 		}
 
 		// ユーザーのレートを取得
-		rating := getPlayerRating(db, cookie.Value)
+		rating := getPlayerRating(db, username)
 
 		// レスポンスを返す
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"username": cookie.Value,
+			"username": username,
 			"rating":   rating,
 		})
 	}
