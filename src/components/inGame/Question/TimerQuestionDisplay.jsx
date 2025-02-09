@@ -13,14 +13,17 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
   const displayTextTimerRef = useRef(null);
   const timerRef = useRef(null);
   const indexRef = useRef(0); // 現在の表示位置を保持
+  //リスニングのために新規追加
+  const listeningQuestionRef = useRef(null);
+  const [isReading, setIsReading] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
   // リスニングの時はこの文字の表示は動かさない
 
   // 文字を1文字ずつ表示（問題文の表示中はタイマーを動かさない）
-  useEffect(() => {
-    console.log(questionText,choices,type);
+   useEffect(() => {
     if (!questionText || isTimerReady || type === "listening") return;
-    
+
     if (!isPaused) {
       displayTextTimerRef.current = setInterval(() => {
         setDisplayText((prev) => {
@@ -32,13 +35,10 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
             clearInterval(displayTextTimerRef.current);
             displayTextTimerRef.current = null;
             setIsTimerReady(true);
-            console.log("isstop",isPaused);
             
-            // すべて表示されたらタイマー開始
+            // タイマー開始
             if (!startTime) {
-              ws.send(JSON.stringify({
-                type: 'settingTimer',
-              }));
+              ws.send(JSON.stringify({ type: 'settingTimer' }));
             }
             setIsReady(true);
             return prev;
@@ -54,28 +54,53 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
     };
   }, [questionText, isPaused, isFastDisplay]);
 
-  // タイマー処理（問題文が全て表示されていないと動かない）
+  //リスニングの処理
   useEffect(() => {
-    console.log("isReady",isReady,"startTime",startTime);
+    if (!questionText || isTimerReady || type !== "listening") return;
+
+    if (!isPaused) {
+      setIsReading(true);
+      setIsFinished(false);
+
+      // 1秒後に再生
+      setTimeout(() => {
+          if (listeningQuestionRef.current) {
+              listeningQuestionRef.current.play();
+          }
+      }, 1000);
+    }
+}, [questionText]);
+
+const handleReadingEnd = () => {
+    setIsReading(false);
+    setIsFinished(true);
+    setIsTimerReady(true);
+    
+    if (!startTime) {
+        ws.send(JSON.stringify({ type: 'settingTimer' }));
+    }
+    setIsReady(true);
+};
+
+  useEffect(() => {
     if (!isReady || !startTime) return;
 
     if (!isPaused) {
       const updateTimer = () => {
         const now = Date.now();
-        const diff = (100 - Math.floor((now - startTime) / 100));
-        // console.log(diff);
+        const diff = 100 - Math.floor((now - startTime) / 100);
+
         if (diff <= 0 || isFastDisplay) {
           clearInterval(timerRef.current);
-            setTimeLeft(100);        // 初期化のタイマー設定
-            setIsReady(false);       // タイマーの準備状態をリセット
-            setStartTime(undefined); // 開始時刻をリセット
-            setDisplayText("");      // 問題文をリセット
-            setIsTimerReady(false);  // タイマーの準備状態をリセット
-            indexRef.current = 0;    // 現在の表示位置をリセット
-            onQuestionTimeOut();     // 問題のタイムアウト処理を実行
+          setTimeLeft(100);
+          setIsReady(false);
+          setStartTime(undefined);
+          setDisplayText("");
+          setIsTimerReady(false);
+          indexRef.current = 0;
+          onQuestionTimeOut();
         } else {
           setTimeLeft(diff);
-          // console.log("残り時間更新");
         }
       };
 
@@ -90,17 +115,16 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
     };
   }, [isTimerReady, isPaused, startTime]);
 
-   // WebSocket状態管理
-    useEffect(() => {
-      if (ws) {
-        ws.onmessage = handleMessage;
-      } 
-      return () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-      };
-    }, [ws]);
+  useEffect(() => {
+    if (ws) {
+      ws.onmessage = handleMessage;
+    } 
+    return () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [ws]);
 
   const renderQuestion = () => {
     switch (type) {
@@ -110,20 +134,11 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
         return <LongQuestion displayText={displayText} choices={choices} />;
       case "listening":
         return <ListeningQuestion 
+          ref={listeningQuestionRef}
           questionText={questionText}
           choices={choices}
           explanation={explanation}
-          isPaused={isPaused}
-          setIsReady={setIsReady}
-          setStartTime={setStartTime}
-          startTime={startTime}
-          isTimerReady={isTimerReady}
-          setIsTimerReady={setIsTimerReady}
-          ws={ws}
-          handleAnswerGiven={handleAnswerGiven}
-          handleAnswerUnlock={handleAnswerUnlock}
-          handleAnswerCorrect={handleAnswerCorrect}
-          onGameEnd={onGameEnd}
+          onEnd={handleReadingEnd}
         />;
       default:
         return <ShortQuestion displayText={displayText} choices={choices} />;
@@ -146,10 +161,13 @@ const TimerQuestionDisplay = ({ type, questionText, choices, explanation, isPaus
           setIsReady(true);
           setStartTime(data.startTime);
         }else if(data.status == 'answer_given'){
+          listeningQuestionRef.current?.pause()
           handleAnswerGiven(data);
         }else if(data.status == 'answer_unlock'){
+          listeningQuestionRef.current?.resume()
           handleAnswerUnlock(data);
         }else if(data.status == 'answer_correct'){
+          listeningQuestionRef.current?.resume()
           handleAnswerCorrect(data);
         }else if(data.status == 'game_end'){
           onGameEnd(data);

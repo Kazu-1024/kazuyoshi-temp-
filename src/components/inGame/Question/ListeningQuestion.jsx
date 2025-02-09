@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 
-const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIsReady, setStartTime, startTime, isTimerReady, setIsTimerReady, ws, handleAnswerGiven, handleAnswerUnlock, handleAnswerCorrect, onGameEnd }) => {
+const ListeningQuestion = forwardRef(({ questionText, choices, explanation,onEnd }, ref) => {
     const [situation, setSituation] = useState("");
     const [question, setQuestion] = useState("");
     const [isPlaying, setIsPlaying] = useState(false);
@@ -31,7 +31,7 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
     };
 
     const handleResume = () => {
-        if (speechSynthesisRef.current && !speechSynthesisRef.current.speaking) {
+        if (speechSynthesisRef.current && speechSynthesisRef.current.speaking) {
             speechSynthesisRef.current.resume();
             setIsPlaying(true);
         }
@@ -61,44 +61,39 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
         setQuestion(question.trim());
 
         // 初期設定: 音声再生を開始
-        setTimeout(() => {
-            handlePlay();
-        }, 1000);
+        // setTimeout(() => {
+        //     handlePlay();
+        // }, 1000);
     }, [questionText]);
 
     // 説明文がある場合の音声再生
     useEffect(() => {
-        if (!explanation || isTimerReady) return;
+        if (!explanation ) return;
 
         utteranceRef.current = new SpeechSynthesisUtterance(explanation);
         speechSynthesisRef.current = speechSynthesis;
 
-        // 音声が終了したらタイマーを設定
+         // 音声が終了したらタイマーを設定
         utteranceRef.current.onend = () => {
-            speechSynthesisRef.current.cancel();
-            setIsTimerReady(true);
             setIsPlaying(false);
-
-            // タイマーの設定を開始
-            if (!startTime) {
-                ws.send(JSON.stringify({ type: 'settingTimer' }));
+            // 親に onend を通知
+            if (onEnd) {
+                onEnd("end");
             }
-            setIsReady(true);
         };
-
-        // 一時停止 or 再開処理
-        if (isPaused) {
-            handlePause();
-        } else if (!isPaused && !isPlaying) {
-            handleResume();
-        }
-
         return () => {
             if (speechSynthesisRef.current) {
                 speechSynthesisRef.current.cancel();
             }
         };
-    }, [explanation, isPaused]);
+    }, [explanation]);
+
+    // 外部から関数を呼び出せるようにする
+    useImperativeHandle(ref, () => ({
+        play: handlePlay,
+        pause: handlePause,
+        resume: handleResume
+    }));
 
     return (
         <div className="absolute w-11/12 h-[90%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30">
@@ -123,6 +118,6 @@ const ListeningQuestion = ({ questionText, choices, explanation, isPaused, setIs
             </div>
         </div>
     );
-};
+});
 
 export default ListeningQuestion;
