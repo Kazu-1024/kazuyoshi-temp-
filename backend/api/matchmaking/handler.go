@@ -100,6 +100,7 @@ func MatchmakingHandler(w http.ResponseWriter, r *http.Request) {
 		Player1Conn: conn,
 		CreatedAt:   time.Now(),
 		IsMatched:   false,
+		FirstAnswerTime: 0,
 	}
 	rooms[newRoom.ID] = newRoom
 	
@@ -238,10 +239,16 @@ func handlePlayerMessages(conn *websocket.Conn, playerID string, room *Room) {
 		}else if message["type"] == "try_answer" {
 			// 早押し成功通知を両プレイヤーに送信
 			log.Println("早押しボタンが押されました")
+			var timeNow  = time.Now().UnixMilli()
+			if room.FirstAnswerTime > 0 && (timeNow-room.FirstAnswerTime) <= 500 {
+				log.Println("他のプレイヤーが0.5秒以内に押しているため無効:")
+				return
+			}
+			room.FirstAnswerTime = timeNow
 			answerMessage := map[string]interface{}{
 				"status":   "answer_given",
 				"player_id": playerID,
-				"anserTime": time.Now().UnixMilli(),
+				"anserTime": timeNow,
 			}
 			room.Player1Conn.WriteJSON(answerMessage)
 			room.Player2Conn.WriteJSON(answerMessage)

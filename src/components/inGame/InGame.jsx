@@ -142,6 +142,7 @@ const InGame = () => {
     }
     setIsLocked(!ableAnswerRef.current[0][playerIdRef.current]);
     console.log(playerIdRef.current);
+    console.log("あなたの回答権",)
     console.log(!ableAnswerRef.current[0][playerIdRef.current]);
     setIsPaused(false);
     setIsAnswering(false);
@@ -159,7 +160,7 @@ const InGame = () => {
       setScoreB(prevScore => {
         const newScore = prevScore + 1;
         setIsAnswering(false);
-        return newScore;
+        return newScore;A
       });
     } else {
       setScoreA(prevScore => {
@@ -207,7 +208,8 @@ const InGame = () => {
     ws.send(JSON.stringify({
       type: 'try_answer',
       roomId: roomId,
-      playerId: playerIdRef.current
+      playerId: playerIdRef.current,
+      now: Date.now()
     }));
   };
 
