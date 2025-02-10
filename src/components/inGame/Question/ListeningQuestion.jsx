@@ -1,4 +1,7 @@
 import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
+import headPhones from '../../../assets/images/headPhones.png'
+import play from '../../../assets/images/play.png'
+import pause from '../../../assets/images/pause.png'
 
 const ListeningQuestion = forwardRef(({ questionText, choices, explanation,onEnd }, ref) => {
     const [situation, setSituation] = useState("");
@@ -96,27 +99,45 @@ const ListeningQuestion = forwardRef(({ questionText, choices, explanation,onEnd
     }));
 
     return (
-        <div className="absolute w-11/12 h-[90%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30">
-            <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
-            <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center">
-                <div className="h-[45%] pt-10 px-3 text-[15px] overflow-scroll">
-                    <p>Question: {question}</p>
-                </div>
-                <div className="h-1/3 w-full grid grid-cols-2 gap-0 items-center text-[11px] font-inter font-bold">
-                    {choices.map((choice, index) => (
-                        <div key={index} className="text-center break-words whitespace-normal min-w-0">
-                            {index + 1 + " "}. {choice}
+        <>
+            <div className="absolute w-11/12 h-[90%] top-8 left-1/2 transform -translate-x-1/2 border-2 border-black bg-white z-30">
+                <p className="font-iceland pl-2 text-white bg-gray-400 border-b-2 border-black">QUESTION</p>
+                <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center">
+                    <div className="h-[45%] pt-10 px-3 text-[15px] overflow-scroll">
+                        <p>Question: {question}</p>
+                    </div>
+                    <div className="h-1/3 w-full grid grid-cols-2 gap-0 items-center text-[15px] font-inter font-bold">
+                        {choices.map((choice, index) => (
+                            <div key={index} className="text-center break-words whitespace-normal min-w-0">
+                                {index + 1 + " "}. {choice}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="relative w-full">
+                        <div className="absolute inset-x-4 border-t border-gray-300"/>
+                    </div>
+                    <div className="h-[55%] w-full flex flex-col items-center justify-center">
+                        <p className="font-bold text-xl mb-1">Listen to the speaker.</p>
+                        <div className="w-20 h-20 mb-1 bg-gray-400 rounded-full flex items-center justify-center">
+                            <img src={headPhones} />
                         </div>
-                    ))}
-                </div>
-                <div className="relative w-full mb-4">
-                    <div className="absolute inset-x-4 border-t border-gray-300"/>
-                </div>
-                <div className="h-[55%] w-full flex flex-col items-center justify-center">
-                    <p className="font-bold text-2xl">Listen it.</p>
+                        <div className="flex items-center justify-center">
+                            {isPlaying ? (
+                                <>
+                                    <img src={play} alt="play" />
+                                    <p>Now playing...</p>
+                                </>
+                            ) : (
+                                <>
+                                    <img src={pause} alt="pause" className="mr-1" />
+                                    <p>Pause</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 });
 
