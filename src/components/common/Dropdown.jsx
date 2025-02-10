@@ -5,8 +5,9 @@ const Dropdown = ({ selectedOption, setOptionSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const options = [
-        { value: 'eiken', label: '英検準一級' },
-        { value: 'TOEIC', label: 'TOEIC' },
+        // { value: 'eiken', label: '英検準一級' },
+        // { value: 'TOEIC', label: 'TOEIC' },
+        { value: 'test', label: 'テスト'}
     ];
 
     const toggleDropdown = () => setIsOpen(!isOpen);    // プルダウンの開閉状態の切り替え
@@ -25,7 +26,7 @@ const Dropdown = ({ selectedOption, setOptionSelect }) => {
 
           {/* プルダウン表示 */}
           <div className="w-full flex items-center justify-between text-2xl font-medium text-center rounded-md">
-            <span className="text-xl">{selectedOption || "モードを選択"}</span>  {/* 選択された項目が表示される */}
+            <span className="text-xl">{selectedOption || "テスト"}</span>  {/* 選択された項目が表示される */}
           </div>
         </div>
 
