@@ -6,6 +6,7 @@ import defaultIcon from '../../assets/images/defaultIcon.png';
 import HomeRouteButton from '../../assets/images/homeRouteButton.png';
 import ratingBg from "../../assets/images/ratingBg.png";
 import shareImg from "../../assets/images/share.png";
+import PlayerRating from '../common/PlayerRating';
 
 const Result = () => {
   const navigate = useNavigate();
@@ -46,40 +47,29 @@ const Result = () => {
           <div className="flex flex-col justify-between h-[50%] w-full">
             {/* 勝者セクション */}
             <div className="w-11/12 h-1/2 mx-auto flex flex-grow justify-center items-center">
-              <div className="flex flex-col bg-white w-72 h-20 rounded-lg relative">
-                <div className="w-5/6 border-t border border-gray-300 mt-2 mx-auto" />
-                <div className="flex items-center justify-between w-full h-full px-5 ">
-                  <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-lg mx-2">{result.winner}</p>
-                  <div className="relative w-1/3">
-                    <img src={ratingBg} alt="Rating Backgroud" className="block" />
-                    <p className="absolute inset-0 left-7 flex items-center justify-center text-white font-jaro tracking-wider text-[20px] outlined-bold">
-                      1512
-                      {/* {result.winner} */}
-                    </p>
-                  </div>
+                <div className="flex flex-col bg-white w-80 h-20 rounded-lg relative">
+                    <div className="w-5/6 border-t border border-gray-300 mt-2 mx-auto" />
+                    <div className="flex items-center justify-between w-full h-full px-5 ">
+                        <img src={defaultIcon} className="w-12 h-12 rounded-full" />
+                        <p className="text-lg mx-2">{result.winner}</p>
+                        <PlayerRating username={result.winner} position="result" />
+                    </div>
+                    <div className="w-5/6 border-t border border-gray-300 mb-2 mx-auto" />
+                    <p className="absolute top-0 left-16 w-10 text-center bg-white text-[12px] font-afacad tracking-wide">winner</p>
                 </div>
-                <div className="w-5/6 border-t border border-gray-300 mb-2 mx-auto" />
-                <p className="absolute top-0 left-16 w-10 text-center bg-white text-[10px] font-afacad tracking-wide">winner</p>
-              </div>
             </div>
             {/* 敗者セクション */}
             <div className="w-10/12 h-1/2 mx-auto flex flex-grow justify-center">
-              <div className="flex flex-col bg-white w-72 h-20 rounded-lg relative">
-                <div className="w-11/12 border-t border border-gray-300 mt-2 mx-auto" />
-                <div className="flex items-center justify-between w-full h-full px-5 ">
-                  <img src={defaultIcon} className="w-12 h-12 rounded-full" />
-                  <p className="text-[15px] mx-2">{result.loser}</p>
-                  <div className="relative w-1/3">
-                    <img src={ratingBg} alt="Rating Backgrond" className="block" />
-                    <p className="absolute inset-0 left-7 flex items-center justify-center text-white font-jaro tracking-wider text-[17px] outlined-bold">
-                      1486
-                    </p>
-                  </div>
+                <div className="flex flex-col bg-white w-72 h-20 rounded-lg relative">
+                    <div className="w-11/12 border-t border border-gray-300 mt-2 mx-auto" />
+                    <div className="flex items-center justify-between w-full h-full px-5 ">
+                        <img src={defaultIcon} className="w-12 h-12 rounded-full" />
+                        <p className="text-[15px] mx-2">{result.loser}</p>
+                        <PlayerRating username={result.loser} position="result" />
+                    </div>
+                    <div className="w-11/12 border-t border border-gray-300 mb-2 mx-auto" />
+                    <p className="absolute top-0 left-16 w-8 text-center bg-white text-[12px] font-afacad tracking-wide">loser</p>
                 </div>
-                <div className="w-11/12 border-t border border-gray-300 mb-2 mx-auto" />
-                <p className="absolute top-0 left-16 w-8 text-center bg-white text-[10px] font-afacad tracking-wide">loser</p>
-              </div>
             </div>
           </div>
           {/* 共有リンクとボタンのセクション */}
@@ -88,10 +78,10 @@ const Result = () => {
             {/* <div className="w-64 h-16 rounded-full bg-gray-400 mb-10">
             </div> */}
             <div className="w-64 h-16 mb-10">
-              <img src={shareImg} className="object-cover" />
+              <img src={shareImg} role="presentation" draggable="false" className="object-cover" />
             </div>
             <button className="mx-auto mb-16" onClick={() => navigate('/')}>
-              <img src={HomeRouteButton} alt="Home" />
+              <img src={HomeRouteButton} role="presentation" draggable="false" alt="Home" />
             </button>
           </div>
         </div>

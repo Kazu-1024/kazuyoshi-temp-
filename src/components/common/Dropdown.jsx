@@ -12,7 +12,7 @@ const Dropdown = ({ selectedOption, setOptionSelect }) => {
     const toggleDropdown = () => setIsOpen(!isOpen);    // プルダウンの開閉状態の切り替え
 
     return (
-        <div className="w-full h-[15%] flex flex-col justify-center relative mt-10">
+        <div className="w-full h-[13%] flex flex-col justify-center relative mt-10">
         <div
           className={`bg-white border-4 ${isOpen ? "border-gray-800" : "border-gray-600"} flex my-auto justify-center h-20 mx-24 rounded-xl shadow-xl cursor-pointer transition-all duration-300 ease-in-out`}
           onClick={toggleDropdown}  // 要素全体をクリックするとプルダウンが開く
