@@ -151,10 +151,6 @@ const handleReadingEnd = () => {
         console.error("メッセージにstatusが含まれていません", data);
         return;
       }
-      console.log('受信したメッセージ:', data);
-  
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data)
         if(data.status == "timer_start"){
           setIsReady(true);
           setStartTime(data.startTime);
@@ -172,7 +168,6 @@ const handleReadingEnd = () => {
         }else{
         console.log('未知のステータス:', data.status);
         } 
-      }
     }catch (error) {
       console.error("受信したメッセージの解析エラー:", error);
     }

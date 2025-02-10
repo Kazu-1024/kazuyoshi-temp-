@@ -195,7 +195,6 @@ const InGame = () => {
 
   const onNextQuestion = () => {
     if (gameEnded) return;
-    setTimeout(() => {
       if (currentQuestionIndexRef.current + 1 < questions.length) {
         // Stateを更新しつつ、Refの値も手動で更新
         currentQuestionIndexRef.current += 1;
@@ -207,11 +206,12 @@ const InGame = () => {
       } else {
         onGameEnd("lastQuestion");
       }
-    },5000);
   };
   
   const onQuestionTimeOut = () => {
-    onNextQuestion();
+    setTimeout(() =>{
+        onNextQuestion();
+    });
   };
 
   const onGameEnd = (data) => {
