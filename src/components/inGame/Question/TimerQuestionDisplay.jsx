@@ -82,7 +82,6 @@ const handleReadingEnd = () => {
 
   useEffect(() => {
     if (!isReady || !startTime) return;
-    console.log("isredey:",isReady,"startTime:",startTime,"isPaused",isPaused);
     if (!isPaused) {
       updateTimer();
       timerRef.current = setInterval(updateTimer, 100);
@@ -146,15 +145,10 @@ const handleReadingEnd = () => {
   const handleMessage = (event) => {
     try {
       const data = JSON.parse(event.data); // 受け取ったメッセージを解析
-      console.log('受信したメッセージ:', data);
       if (!data.status) {
         console.error("メッセージにstatusが含まれていません", data);
         return;
       }
-      console.log('受信したメッセージ:', data);
-  
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data)
         if(data.status == "timer_start"){
           setIsReady(true);
           setStartTime(data.startTime);
@@ -172,7 +166,6 @@ const handleReadingEnd = () => {
         }else{
         console.log('未知のステータス:', data.status);
         } 
-      }
     }catch (error) {
       console.error("受信したメッセージの解析エラー:", error);
     }
