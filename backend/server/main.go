@@ -73,6 +73,10 @@ func main() {
 	r.HandleFunc("/rate/top", rate.GetTopPlayersHandler(db)).Methods("GET")
 	r.HandleFunc("/rate/user", rate.GetUserRatingHandler(db)).Methods("GET")
 
+	r.HandleFunc("/uploadicon", account.UploadIconHandler(db, "./uploads")).Methods("POST", "OPTIONS")
+	r.HandleFunc("/getusericon", account.GetUserIconHandler(db)).Methods("GET", "OPTIONS")
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads/"))))
+
 	// サーバーの設定
 	port := ":8080"
 	fmt.Printf("Server is running on port %s\n", port)
